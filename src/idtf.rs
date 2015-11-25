@@ -44,7 +44,7 @@ pub enum Header {
     /// The number of frames in this sequence.
     total_frames: u16,
     /// Whether the z-coordinate is used.
-    is3d: bool,
+    is_3d: bool,
     points: Vec<TrueColorPoint>,
   },
 
@@ -58,7 +58,7 @@ pub enum Header {
     /// The number of frames in this sequence.
     total_frames: u16,
     /// Whether the z-coordinate is used.
-    is3d: bool,
+    is_3d: bool,
     points: Vec<IndexedPoint>,
   },
 
