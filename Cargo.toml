@@ -1,0 +1,14 @@
+[package]
+  name = "ilda"
+  version = "0.0.1"
+  authors = [ "Brandon Thomas <bt@brand.io>, <echelon@gmail.com>" ]
+  description = "A library for reading ILDA laser projection display files."
+  keywords = [ "ILDA", "laser", "projector", "projection", "graphics" ]
+  repository = "https://github.com/echelon/ilda.rs"
+
+[lib]
+  name = "ilda"
+  path = "src/lib.rs"
+
+[dependencies]
+  log = "0.3.*"
