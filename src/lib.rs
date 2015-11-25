@@ -37,6 +37,8 @@ pub enum Format {
 }
 
 pub mod idtf;
+pub mod reader;
+
 
 /*pub struct ColorPalette {
 }*/

@@ -1,60 +1,74 @@
 // Copyright (c) 2015 Brandon Thomas <bt@brand.io>
 
-pub struct IndexedPoint {
-  x: i16,
-  y: i16,
-  z: i16,
-  isLastPoint: bool,
-  /// If the laser should treat this as a blanking point.
-  isBlank: bool,
-  colorIndex: u8,
-}
-
+/// A point with an asigned RGB color.
 pub struct TrueColorPoint {
   x: i16,
   y: i16,
   z: i16,
-  isLastPoint: bool,
+  /// Whether this is the last point in the image.
+  is_last_point: bool,
   /// If the laser should treat this as a blanking point.
-  isBlank: bool,
+  is_blank: bool,
   r: u8,
   g: u8,
   b: u8,
 }
 
-pub struct IndexedFrame {
-  frameName: String,
-  companyName: String,
-  frameNumber: u16,
-  /// The number of frames in this sequence.
-  totalFrames: u16,
-  is3d: bool,
-  points: Vec<IndexedPoint>,
+/// A point with a color palette lookup index.
+pub struct IndexedPoint {
+  x: i16,
+  y: i16,
+  z: i16,
+  /// Whether this is the last point in the image.
+  is_last_point: bool,
+  /// If the laser should treat this as a blanking point.
+  is_blank: bool,
+  color_index: u8,
 }
 
-pub struct TrueColorFrame {
-  frameName: String,
-  companyName: String,
-  frameNumber: u16,
-
-  /// The number of frames in this sequence.
-  totalFrames: u16,
-  is3d: bool,
-
-  points: Vec<TrueColorPoint>,
-}
-
+/// A color within a `Header::ColorPalette`.
 pub struct Color {
   r: u8,
   g: u8,
   b: u8,
 }
 
-/*pub struct ColorPalette {
-  paletteName: String,
-  companyName: String,
-  paletteNumber: u16, // TODO: Used?
-  projectorNumber: u8, // TODO: Used?
-  colors: Vec<Color>,
-}*/
+pub enum Header {
+  /// A 2D or 3D frame where each point is assigned an RGB color.
+  TrueColorFrame {
+    frame_name: Option<String>,
+    company_name: Option<String>,
+    /// The projector to display this frame on.
+    projector_number: u8,
+    frame_number: u16,
+    /// The number of frames in this sequence.
+    total_frames: u16,
+    /// Whether the z-coordinate is used.
+    is3d: bool,
+    points: Vec<TrueColorPoint>,
+  },
+
+  /// A 2D or 3D frame with indexed colors.
+  IndexedFrame {
+    frame_name: Option<String>,
+    company_name: Option<String>,
+    /// The projector to display this frame on.
+    projector_number: u8,
+    frame_number: u16,
+    /// The number of frames in this sequence.
+    total_frames: u16,
+    /// Whether the z-coordinate is used.
+    is3d: bool,
+    points: Vec<IndexedPoint>,
+  },
+
+  /// A color palette that is used for IndexedFrames/IndexedPoints.
+  ColorPalette {
+    palette_name: Option<String>,
+    company_name: Option<String>,
+    palette_number: u16, // TODO: Used?
+    projector_number: u8, // TODO: Used?
+    colors: Vec<Color>,
+  },
+}
 
