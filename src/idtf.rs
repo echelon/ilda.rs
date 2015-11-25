@@ -22,7 +22,6 @@ pub struct TrueColorPoint {
   b: u8,
 }
 
-
 pub struct IndexedFrame {
   frameName: String,
   companyName: String,
@@ -51,11 +50,11 @@ pub struct Color {
   b: u8,
 }
 
-pub struct ColorPalette {
+/*pub struct ColorPalette {
   paletteName: String,
   companyName: String,
   paletteNumber: u16, // TODO: Used?
   projectorNumber: u8, // TODO: Used?
   colors: Vec<Color>,
-}
+}*/
 

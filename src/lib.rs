@@ -1,7 +1,7 @@
 // Copyright (c) 2015 Brandon Thomas <bt@brand.io>
-use std::num::FromPrimitive;
 
 pub mod ilda {
+  pub use idtf;
 }
 
 
@@ -28,7 +28,6 @@ pub fn parse_coordinates() {
   
 }
 
-#[derive(FromPrimitive)]
 pub enum Format {
   Indexed3d, // 0
   Indexed2d, // 1
@@ -37,6 +36,7 @@ pub enum Format {
   TrueColor2d, // 5
 }
 
+pub mod idtf;
 
-pub struct ColorPalette {
-}
+/*pub struct ColorPalette {
+}*/
