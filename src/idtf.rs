@@ -1,6 +1,7 @@
 // Copyright (c) 2015 Brandon Thomas <bt@brand.io>
 
 /// A point with an asigned RGB color.
+#[derive(Debug)]
 pub struct TrueColorPoint {
   x: i16,
   y: i16,
@@ -15,6 +16,7 @@ pub struct TrueColorPoint {
 }
 
 /// A point with a color palette lookup index.
+#[derive(Debug)]
 pub struct IndexedPoint {
   x: i16,
   y: i16,
@@ -27,12 +29,14 @@ pub struct IndexedPoint {
 }
 
 /// A color within a `Header::ColorPalette`.
+#[derive(Debug)]
 pub struct Color {
   r: u8,
   g: u8,
   b: u8,
 }
 
+#[derive(Debug)]
 pub enum Header {
   /// A 2D or 3D frame where each point is assigned an RGB color.
   TrueColorFrame {

@@ -5,6 +5,7 @@ use ilda::reader::read_file;
 
 
 pub fn main() {
-  read_file("./examples/ildatest.ild");
+  let result = read_file("./examples/ildatest.ild").ok().unwrap();
+  println!("{:?}", result);
 }
 

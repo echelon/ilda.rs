@@ -41,8 +41,11 @@ pub fn read_file(filename: &str) -> Result<Vec<Header>, Error> {
 
   let result = read_header(&contents[0..32]);
 
+  let mut vec = Vec::new();
+  vec.push(result.ok().unwrap());
+  Ok(vec)
 
-  Err(Error::FileReadError)
+  //Err(Error::FileReadError)
 }
 
 const ILDA_HEADER : [u8; 4] = [73u8, 76u8, 68u8, 65u8]; // "ILDA" in ASCII
