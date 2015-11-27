@@ -56,12 +56,12 @@ pub fn read_header(header_bytes: &[u8]) -> Result<Header, Error> {
     return Err(Error::InvalidFormat);
   }
 
-  let name = read_name(&header_bytes[8..17]);
-  let company_name = read_name(&header_bytes[17..25]);
-  let number_of_records = read_u16(&header_bytes[25..27]);
-  let number = read_u16(&header_bytes[27..29]);
-  let total_frames = read_u16(&header_bytes[29..31]);
-  let projector_number = header_bytes[31];
+  let name              = read_name(&header_bytes[8..16]);
+  let company_name      = read_name(&header_bytes[16..24]);
+  let number_of_records = read_u16(&header_bytes[24..26]);
+  let number            = read_u16(&header_bytes[26..28]);
+  let total_frames      = read_u16(&header_bytes[28..30]);
+  let projector_number  = header_bytes[31];
 
   // Read "format code" byte.
   let header = match header_bytes[7] {
@@ -151,6 +151,5 @@ mod tests {
     assert_eq!(read_u16(&[255u8, 0u8]), 65280u16);
     assert_eq!(read_u16(&[255u8, 255u8]), 65535u16);
   }
-
 }
 
