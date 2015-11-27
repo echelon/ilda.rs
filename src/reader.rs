@@ -60,7 +60,6 @@ pub fn read_header(header_bytes: &[u8]) -> Result<Header, Error> {
   let total_frames = read_u16(&header_bytes[29..31]);
   let projector_number = header_bytes[31];
 
-  // TODO: Condense switch.
   // Read "format code" byte.
   let header = match header_bytes[7] {
     f @ 0u8 |
@@ -105,7 +104,18 @@ pub fn read_header(header_bytes: &[u8]) -> Result<Header, Error> {
 }
 
 fn read_name(bytes: &[u8]) -> Option<String> {
-  None
+  let mut name = String::with_capacity(8);
+  for byte in bytes {
+    if *byte == 0 {
+      break;
+    } else {
+      name.push(*byte as char);
+    }
+  }
+  match name.len() {
+    0 => None,
+    _ => Some(name),
+  }
 }
 
 fn read_u16(bytes: &[u8]) -> u16 {
@@ -116,7 +126,16 @@ fn read_u16(bytes: &[u8]) -> u16 {
 #[cfg(test)]
 mod tests {
   //use super::*;
+  use super::read_name;
   use super::read_u16;
+
+  #[test]
+  fn test_read_name() {
+    assert_eq!(read_name(&[0, 0, 0, 0]), None);
+    assert_eq!(read_name(&[0, 100, 100, 100]), None);
+    assert_eq!(read_name(&[102, 111, 111]), Some("foo".to_string()));
+    assert_eq!(read_name(&[102, 111, 111, 0, 111]), Some("foo".to_string()));
+  }
 
   #[test]
   fn test_read_u16() {
@@ -127,5 +146,6 @@ mod tests {
     assert_eq!(read_u16(&[255u8, 0u8]), 65280u16);
     assert_eq!(read_u16(&[255u8, 255u8]), 65535u16);
   }
+
 }
 
