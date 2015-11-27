@@ -111,6 +111,8 @@ fn read_name(bytes: &[u8]) -> Option<String> {
   for byte in bytes {
     if *byte == 0 {
       break;
+    } else if *byte < 31 {
+      continue; // unprintable characters
     } else {
       name.push(*byte as char);
     }
