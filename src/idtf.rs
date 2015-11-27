@@ -44,6 +44,7 @@ pub enum Header {
     company_name: Option<String>,
     /// The projector to display this frame on.
     projector_number: u8,
+    number_of_records: u16, // TODO: Doc
     frame_number: u16,
     /// The number of frames in this sequence.
     total_frames: u16,
@@ -58,6 +59,7 @@ pub enum Header {
     company_name: Option<String>,
     /// The projector to display this frame on.
     projector_number: u8,
+    number_of_records: u16, // TODO: Doc
     frame_number: u16,
     /// The number of frames in this sequence.
     total_frames: u16,
@@ -70,6 +72,7 @@ pub enum Header {
   ColorPalette {
     palette_name: Option<String>,
     company_name: Option<String>,
+    number_of_records: u16, // TODO: Doc
     palette_number: u16, // TODO: Used?
     projector_number: u8, // TODO: Used?
     colors: Vec<Color>,
