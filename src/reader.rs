@@ -1,6 +1,8 @@
 // Copyright (c) 2015 Brandon Thomas <bt@brand.io>
 
-use idtf::*;
+use idtf::Header;
+use idtf::IndexedPoint;
+use idtf::TrueColorPoint;
 use std::fs::File;
 use std::io::Read;
 
@@ -11,20 +13,17 @@ pub enum Error {
   InvalidFormat,
 }
 
-// TODO: Interface for reading passed &[u8].
+/// Read ILDA data from a file.
 pub fn read_file(filename: &str) -> Result<Vec<Header>, Error> {
   let mut contents = Vec::new();
 
   match File::open(filename) {
     Err(_) => { 
-      println!("Error A");
       return Err(Error::FileReadError); 
     },
     Ok(mut file) => {
-      // TODO: Not reading a string! Reading binary!
       match file.read_to_end(&mut contents) {
         Err(_) => { 
-          println!("Error B");
           return Err(Error::FileReadError); 
         },
         Ok(_) => {},
@@ -32,25 +31,38 @@ pub fn read_file(filename: &str) -> Result<Vec<Header>, Error> {
     }
   }
 
-  if contents.len() < 32 {
+  read_bytes(&contents[..])
+}
+
+const HEADER_SIZE : usize = 32;
+const INDEXED_3D_DATA_SIZE: usize = 8;
+const INDEXED_2D_DATA_SIZE: usize = 8;
+const ILDA_HEADER : [u8; 4] = [73u8, 76u8, 68u8, 65u8]; // "ILDA" in ASCII
+
+/// Read ILDA data from raw bytes.
+pub fn read_bytes(ilda_bytes: &[u8]) -> Result<Vec<Header>, Error> {
+  if ilda_bytes.len() < 32 {
     println!("Error C");
     return Err(Error::InvalidFile { reason: "File too short.".to_string() });
   }
 
-  let header_slice : &[u8] = &contents[0..32];
-
-  let result = read_header(&contents[0..32]);
-
   let mut vec = Vec::new();
-  vec.push(result.ok().unwrap());
-  Ok(vec)
+  let mut i : usize = 0; 
 
-  //Err(Error::FileReadError)
+  match read_header(&ilda_bytes[i .. i + HEADER_SIZE]) {
+    Err(err) => { 
+      return Err(err); 
+    },
+    Ok(mut header) => {
+      read_data(&mut header, &ilda_bytes[i + HEADER_SIZE ..]);
+      vec.push(header);
+    },
+  }
+
+  Ok(vec)
 }
 
-const ILDA_HEADER : [u8; 4] = [73u8, 76u8, 68u8, 65u8]; // "ILDA" in ASCII
-
-pub fn read_header(header_bytes: &[u8]) -> Result<Header, Error> {
+fn read_header(header_bytes: &[u8]) -> Result<Header, Error> {
   if header_bytes.len() != 32 
       || &header_bytes[0..4] != &ILDA_HEADER {
     return Err(Error::InvalidFormat);
@@ -107,6 +119,51 @@ pub fn read_header(header_bytes: &[u8]) -> Result<Header, Error> {
   };
 
   Ok(header)
+}
+
+fn read_data(header: &mut Header, bytes: &[u8] ) -> Result<Header, Error> {
+  match header {
+    &mut Header::IndexedFrame { records, is_3d, ref mut points, .. } => {
+      if (is_3d) {
+        let until = records as usize * INDEXED_3D_DATA_SIZE;
+        let mut i = 0;
+
+        while i < until {
+          let data_bytes = &bytes[i .. i + INDEXED_3D_DATA_SIZE];
+          let x           = read_u16(&data_bytes[0..2]) as i16; // TODO: i16
+          let y           = read_u16(&data_bytes[2..4]) as i16; // TODO: i16
+          let z           = read_u16(&data_bytes[4..6]) as i16; // TODO: i16
+          let status      = data_bytes[6]; // TODO: Bitmask
+          let color_index = data_bytes[7];
+
+          let point = IndexedPoint {
+            x: x,
+            y: y,
+            z: z,
+            is_last_point: false,
+            is_blank: false,
+            color_index: color_index,
+          };
+
+          points.push(point);
+
+          i += INDEXED_3D_DATA_SIZE;
+        }
+      } else {
+        // TODO: Cleanup.
+      }
+
+      return Err(Error::FileReadError); // TODO: Return type ?
+    },
+    &mut Header::TrueColorFrame { .. } => {
+      return Err(Error::FileReadError);
+    },
+    &mut Header::ColorPalette { .. } => {
+      return Err(Error::FileReadError);
+    },
+  }
+
+  Err(Error::FileReadError)
 }
 
 fn read_name(bytes: &[u8]) -> Option<String> {

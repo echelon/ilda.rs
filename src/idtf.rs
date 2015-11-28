@@ -3,37 +3,37 @@
 /// A point with an asigned RGB color.
 #[derive(Debug)]
 pub struct TrueColorPoint {
-  x: i16,
-  y: i16,
-  z: i16,
+  pub x: i16,
+  pub y: i16,
+  pub z: i16,
   /// Whether this is the last point in the image.
-  is_last_point: bool,
+  pub is_last_point: bool,
   /// If the laser should treat this as a blanking point.
-  is_blank: bool,
-  r: u8,
-  g: u8,
-  b: u8,
+  pub is_blank: bool,
+  pub r: u8,
+  pub g: u8,
+  pub b: u8,
 }
 
 /// A point with a color palette lookup index.
 #[derive(Debug)]
 pub struct IndexedPoint {
-  x: i16,
-  y: i16,
-  z: i16,
+  pub x: i16,
+  pub y: i16,
+  pub z: i16,
   /// Whether this is the last point in the image.
-  is_last_point: bool,
+  pub is_last_point: bool,
   /// If the laser should treat this as a blanking point.
-  is_blank: bool,
-  color_index: u8,
+  pub is_blank: bool,
+  pub color_index: u8,
 }
 
 /// A color within a `Header::ColorPalette`.
 #[derive(Debug)]
 pub struct Color {
-  r: u8,
-  g: u8,
-  b: u8,
+  pub r: u8,
+  pub g: u8,
+  pub b: u8,
 }
 
 #[derive(Debug)]
