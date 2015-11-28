@@ -59,7 +59,7 @@ pub fn read_header(header_bytes: &[u8]) -> Result<Header, Error> {
   let name              = read_name(&header_bytes[8..16]);
   let company_name      = read_name(&header_bytes[16..24]);
   let number_of_records = read_u16(&header_bytes[24..26]);
-  let number            = read_u16(&header_bytes[26..28]);
+  let frame_number      = read_u16(&header_bytes[26..28]);
   let total_frames      = read_u16(&header_bytes[28..30]);
   let projector_number  = header_bytes[31];
 
@@ -70,9 +70,9 @@ pub fn read_header(header_bytes: &[u8]) -> Result<Header, Error> {
       Header::IndexedFrame {
         frame_name: name,
         company_name: company_name,
-        number_of_records: number_of_records,
+        records: number_of_records,
         projector_number: projector_number,
-        frame_number: number,
+        frame_number: frame_number,
         total_frames: total_frames,
         is_3d: f == 0u8,
         points: Vec::new(),
@@ -82,9 +82,9 @@ pub fn read_header(header_bytes: &[u8]) -> Result<Header, Error> {
       Header::ColorPalette {
         palette_name: name,
         company_name: company_name,
-        number_of_records: number_of_records,
+        records: number_of_records,
         projector_number: projector_number,
-        palette_number: number,
+        palette_number: frame_number,
         colors: Vec:: new(),
       }
     },
@@ -93,9 +93,9 @@ pub fn read_header(header_bytes: &[u8]) -> Result<Header, Error> {
       Header::TrueColorFrame {
         frame_name: name,
         company_name: company_name,
-        number_of_records: number_of_records,
+        records: number_of_records,
         projector_number: projector_number,
-        frame_number: number,
+        frame_number: frame_number,
         total_frames: total_frames,
         is_3d: f == 4u8,
         points: Vec::new(),

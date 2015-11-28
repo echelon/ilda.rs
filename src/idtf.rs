@@ -42,14 +42,18 @@ pub enum Header {
   TrueColorFrame {
     frame_name: Option<String>,
     company_name: Option<String>,
-    /// The projector to display this frame on.
-    projector_number: u8,
-    number_of_records: u16, // TODO: Doc
+    /// The number of points records following this header.
+    /// If 0, this is the EOF header.
+    records: u16,
+    /// If the frame is part of an animation, this is the frame number 
+    /// within the animation sequence.
     frame_number: u16,
-    /// The number of frames in this sequence.
+    /// The number of frames within this sequence.
     total_frames: u16,
     /// Whether the z-coordinate is used.
     is_3d: bool,
+    /// The projector to display this frame on.
+    projector_number: u8,
     points: Vec<TrueColorPoint>,
   },
 
@@ -57,14 +61,18 @@ pub enum Header {
   IndexedFrame {
     frame_name: Option<String>,
     company_name: Option<String>,
-    /// The projector to display this frame on.
-    projector_number: u8,
-    number_of_records: u16, // TODO: Doc
+    /// The number of points records following this header.
+    /// If 0, this is the EOF header.
+    records: u16,
+    /// If the frame is part of an animation, this is the frame number 
+    /// within the animation sequence.
     frame_number: u16,
-    /// The number of frames in this sequence.
+    /// The number of frames within this sequence.
     total_frames: u16,
     /// Whether the z-coordinate is used.
     is_3d: bool,
+    /// The projector to display this frame on.
+    projector_number: u8,
     points: Vec<IndexedPoint>,
   },
 
@@ -72,7 +80,10 @@ pub enum Header {
   ColorPalette {
     palette_name: Option<String>,
     company_name: Option<String>,
-    number_of_records: u16, // TODO: Doc
+    /// The number of color records following this header.
+    /// Must be within the range [2, 256].
+    /// If 0, this is the EOF header.
+    records: u16,
     palette_number: u16, // TODO: Used?
     projector_number: u8, // TODO: Used?
     colors: Vec<Color>,
