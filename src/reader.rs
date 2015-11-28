@@ -63,6 +63,8 @@ pub fn read_bytes(ilda_bytes: &[u8]) -> Result<Vec<Header>, Error> {
       Ok(mut header) => {
         read_data(&mut header, &ilda_bytes[i + HEADER_SIZE ..]);
 
+        i += HEADER_SIZE;
+
         match &header {
           &Header::IndexedFrame { records, is_3d, .. } => {
             if is_3d {
@@ -79,16 +81,14 @@ pub fn read_bytes(ilda_bytes: &[u8]) -> Result<Vec<Header>, Error> {
             }
           },
           &Header::ColorPalette { records, .. } => {
+            i += COLOR_PALETTE_SIZE * records as usize;
           },
         }
 
-        i += HEADER_SIZE;
         vec.push(header);
       },
     }
   }
-
-
 
   Ok(vec)
 }
@@ -161,9 +161,9 @@ fn read_data(header: &mut Header, bytes: &[u8] ) -> Result<Header, Error> {
 
         while i < until {
           let data_bytes = &bytes[i .. i + INDEXED_3D_DATA_SIZE];
-          let x           = read_u16(&data_bytes[0..2]) as i16; // TODO: i16
-          let y           = read_u16(&data_bytes[2..4]) as i16; // TODO: i16
-          let z           = read_u16(&data_bytes[4..6]) as i16; // TODO: i16
+          let x           = read_i16(&data_bytes[0..2]);
+          let y           = read_i16(&data_bytes[2..4]);
+          let z           = read_i16(&data_bytes[4..6]);
           let status      = data_bytes[6]; // TODO: Bitmask
           let color_index = data_bytes[7];
 
@@ -214,6 +214,11 @@ fn read_name(bytes: &[u8]) -> Option<String> {
   }
 }
 
+// TODO/FIXME: Does Rust's casting use 2's complement? Do some maths.
+fn read_i16(bytes: &[u8]) -> i16 {
+  (((bytes[0] as u16) << 8) | (bytes[1] as u16)) as i16
+}
+
 fn read_u16(bytes: &[u8]) -> u16 {
   ((bytes[0] as u16) << 8) | (bytes[1] as u16)
 }
@@ -223,6 +228,7 @@ fn read_u16(bytes: &[u8]) -> u16 {
 mod tests {
   //use super::*;
   use super::read_name;
+  use super::read_i16;
   use super::read_u16;
 
   #[test]
@@ -231,6 +237,18 @@ mod tests {
     assert_eq!(read_name(&[0, 100, 100, 100]), None);
     assert_eq!(read_name(&[102, 111, 111]), Some("foo".to_string()));
     assert_eq!(read_name(&[102, 111, 111, 0, 111]), Some("foo".to_string()));
+  }
+
+  #[test]
+  fn test_read_i16() {
+    assert_eq!(read_i16(&[0u8, 0u8]), 0i16);
+    assert_eq!(read_i16(&[0u8, 255u8]), 255i16);
+    assert_eq!(read_i16(&[127u8, 255u8]), 32767i16);
+    assert_eq!(read_i16(&[128u8, 0u8]), -32768i16);
+    assert_eq!(read_i16(&[128u8, 255u8]), -32513i16);
+    assert_eq!(read_i16(&[255u8, 0u8]), -256);
+    assert_eq!(read_i16(&[255u8, 1u8]), -255);
+    assert_eq!(read_i16(&[255u8, 255u8]), -1);
   }
 
   #[test]
