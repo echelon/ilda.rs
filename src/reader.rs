@@ -6,6 +6,17 @@ use idtf::TrueColorPoint;
 use std::fs::File;
 use std::io::Read;
 
+// Various header and data payload sizes in bytes.
+const HEADER_SIZE : usize = 32;
+const COLOR_PALETTE_SIZE: usize = 3;
+const INDEXED_2D_DATA_SIZE: usize = 6;
+const INDEXED_3D_DATA_SIZE: usize = 8;
+const TRUE_COLOR_2D_DATA_SIZE: usize = 8;
+const TRUE_COLOR_3D_DATA_SIZE: usize = 10;
+
+// "ILDA" in ASCII.
+const ILDA_HEADER : [u8; 4] = [73u8, 76u8, 68u8, 65u8];
+
 // TODO: Revise errors.
 pub enum Error {
   FileReadError,
@@ -18,13 +29,13 @@ pub fn read_file(filename: &str) -> Result<Vec<Header>, Error> {
   let mut contents = Vec::new();
 
   match File::open(filename) {
-    Err(_) => { 
-      return Err(Error::FileReadError); 
+    Err(_) => {
+      return Err(Error::FileReadError);
     },
     Ok(mut file) => {
       match file.read_to_end(&mut contents) {
-        Err(_) => { 
-          return Err(Error::FileReadError); 
+        Err(_) => {
+          return Err(Error::FileReadError);
         },
         Ok(_) => {},
       }
@@ -34,11 +45,6 @@ pub fn read_file(filename: &str) -> Result<Vec<Header>, Error> {
   read_bytes(&contents[..])
 }
 
-const HEADER_SIZE : usize = 32;
-const INDEXED_3D_DATA_SIZE: usize = 8;
-const INDEXED_2D_DATA_SIZE: usize = 8;
-const ILDA_HEADER : [u8; 4] = [73u8, 76u8, 68u8, 65u8]; // "ILDA" in ASCII
-
 /// Read ILDA data from raw bytes.
 pub fn read_bytes(ilda_bytes: &[u8]) -> Result<Vec<Header>, Error> {
   if ilda_bytes.len() < 32 {
@@ -47,23 +53,48 @@ pub fn read_bytes(ilda_bytes: &[u8]) -> Result<Vec<Header>, Error> {
   }
 
   let mut vec = Vec::new();
-  let mut i : usize = 0; 
+  let mut i : usize = 0;
 
-  match read_header(&ilda_bytes[i .. i + HEADER_SIZE]) {
-    Err(err) => { 
-      return Err(err); 
-    },
-    Ok(mut header) => {
-      read_data(&mut header, &ilda_bytes[i + HEADER_SIZE ..]);
-      vec.push(header);
-    },
+  while i < ilda_bytes.len() {
+    match read_header(&ilda_bytes[i .. i + HEADER_SIZE]) {
+      Err(err) => {
+        return Err(err);
+      },
+      Ok(mut header) => {
+        read_data(&mut header, &ilda_bytes[i + HEADER_SIZE ..]);
+
+        match &header {
+          &Header::IndexedFrame { records, is_3d, .. } => {
+            if is_3d {
+              i += INDEXED_3D_DATA_SIZE * records as usize;
+            } else {
+              i += INDEXED_2D_DATA_SIZE * records as usize;
+            }
+          },
+          &Header::TrueColorFrame { records, is_3d, .. } => {
+            if is_3d {
+              i += TRUE_COLOR_3D_DATA_SIZE * records as usize;
+            } else {
+              i += TRUE_COLOR_2D_DATA_SIZE * records as usize;
+            }
+          },
+          &Header::ColorPalette { records, .. } => {
+          },
+        }
+
+        i += HEADER_SIZE;
+        vec.push(header);
+      },
+    }
   }
+
+
 
   Ok(vec)
 }
 
 fn read_header(header_bytes: &[u8]) -> Result<Header, Error> {
-  if header_bytes.len() != 32 
+  if header_bytes.len() != 32
       || &header_bytes[0..4] != &ILDA_HEADER {
     return Err(Error::InvalidFormat);
   }
@@ -78,7 +109,7 @@ fn read_header(header_bytes: &[u8]) -> Result<Header, Error> {
   // Read "format code" byte.
   let header = match header_bytes[7] {
     f @ 0u8 |
-    f @ 1u8 => { 
+    f @ 1u8 => {
       Header::IndexedFrame {
         frame_name: name,
         company_name: company_name,
@@ -90,7 +121,7 @@ fn read_header(header_bytes: &[u8]) -> Result<Header, Error> {
         points: Vec::new(),
       }
     },
-    2u8 => { 
+    2u8 => {
       Header::ColorPalette {
         palette_name: name,
         company_name: company_name,
@@ -101,7 +132,7 @@ fn read_header(header_bytes: &[u8]) -> Result<Header, Error> {
       }
     },
     f @ 4u8 |
-    f @ 5u8 => { 
+    f @ 5u8 => {
       Header::TrueColorFrame {
         frame_name: name,
         company_name: company_name,
@@ -124,7 +155,7 @@ fn read_header(header_bytes: &[u8]) -> Result<Header, Error> {
 fn read_data(header: &mut Header, bytes: &[u8] ) -> Result<Header, Error> {
   match header {
     &mut Header::IndexedFrame { records, is_3d, ref mut points, .. } => {
-      if (is_3d) {
+      if is_3d {
         let until = records as usize * INDEXED_3D_DATA_SIZE;
         let mut i = 0;
 
@@ -145,7 +176,7 @@ fn read_data(header: &mut Header, bytes: &[u8] ) -> Result<Header, Error> {
             color_index: color_index,
           };
 
-          points.push(point);
+          //points.push(point);
 
           i += INDEXED_3D_DATA_SIZE;
         }
