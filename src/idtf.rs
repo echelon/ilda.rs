@@ -1,5 +1,12 @@
 // Copyright (c) 2015 Brandon Thomas <bt@brand.io>
 
+use data::RawHeader;
+use data::IndexedPoint2d;
+use data::IndexedPoint3d;
+use data::TrueColorPoint2d;
+use data::TrueColorPoint3d;
+use data::ColorPalette;
+
 /// A point with an asigned RGB color.
 #[derive(Debug)]
 pub struct TrueColorPoint {
@@ -14,6 +21,7 @@ pub struct TrueColorPoint {
   pub g: u8,
   pub b: u8,
 }
+
 
 /// A point with a color palette lookup index.
 #[derive(Debug)]
@@ -36,8 +44,9 @@ pub struct Color {
   pub b: u8,
 }
 
+// TODO: De-enumify this.
 #[derive(Debug)]
-pub enum Header {
+pub enum OldHeader {
   /// A 2D or 3D frame where each point is assigned an RGB color.
   TrueColorFrame {
     frame_name: Option<String>,
@@ -45,7 +54,7 @@ pub enum Header {
     /// The number of points records following this header.
     /// If 0, this is the EOF header.
     records: u16,
-    /// If the frame is part of an animation, this is the frame number 
+    /// If the frame is part of an animation, this is the frame number
     /// within the animation sequence.
     frame_number: u16,
     /// The number of frames within this sequence.
@@ -64,7 +73,7 @@ pub enum Header {
     /// The number of points records following this header.
     /// If 0, this is the EOF header.
     records: u16,
-    /// If the frame is part of an animation, this is the frame number 
+    /// If the frame is part of an animation, this is the frame number
     /// within the animation sequence.
     frame_number: u16,
     /// The number of frames within this sequence.
