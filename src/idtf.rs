@@ -1,5 +1,11 @@
 // Copyright (c) 2015 Brandon Thomas <bt@brand.io>
 
+use data::IndexedPoint2d;
+use data::IndexedPoint3d;
+use data::TrueColorPoint2d;
+use data::TrueColorPoint3d;
+use data::ColorPalette;
+
 /// A point with an asigned RGB color.
 #[derive(Debug)]
 pub struct TrueColorPoint {
@@ -14,6 +20,7 @@ pub struct TrueColorPoint {
   pub g: u8,
   pub b: u8,
 }
+
 
 /// A point with a color palette lookup index.
 #[derive(Debug)]
@@ -36,6 +43,7 @@ pub struct Color {
   pub b: u8,
 }
 
+// TODO: De-enumify this.
 #[derive(Debug)]
 pub enum Header {
   /// A 2D or 3D frame where each point is assigned an RGB color.
@@ -88,5 +96,16 @@ pub enum Header {
     projector_number: u8, // TODO: Used?
     colors: Vec<Color>,
   },
+}
+
+
+#[derive(Debug)]
+pub enum IldaEntry {
+  HeaderEntry(Header),
+  TcPoint3dEntry(TrueColorPoint3d),
+  TcPoint2dEntry(TrueColorPoint2d),
+  ColorPaletteEntry(ColorPalette),
+  IdxPoint3dEntry(IndexedPoint3d),
+  IdxPoint2dEntry(IndexedPoint2d),
 }
 

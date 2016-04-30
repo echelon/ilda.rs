@@ -2,6 +2,7 @@
 
 pub mod ilda {
   pub use idtf;
+  pub use data;
 }
 
 
@@ -25,7 +26,6 @@ pub fn parse_frame() {
 // 37 - 38    Z coord, signed 2's compliment, -32768, +32767
 // 39 - 40    Status code
 pub fn parse_coordinates() {
-  
 }
 
 pub enum Format {
@@ -37,6 +37,7 @@ pub enum Format {
 }
 
 pub mod idtf;
+pub mod data;
 pub mod reader;
 
 
