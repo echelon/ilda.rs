@@ -1,6 +1,8 @@
 // Copyright (c) 2015 Brandon Thomas <bt@brand.io>
 
-use idtf::Header;
+// TODO: rename module `parser`
+
+use idtf::OldHeader;
 use idtf::IndexedPoint;
 use idtf::TrueColorPoint;
 use std::fs::File;
@@ -25,7 +27,7 @@ pub enum Error {
 }
 
 /// Read ILDA data from a file.
-pub fn read_file(filename: &str) -> Result<Vec<Header>, Error> {
+pub fn read_file(filename: &str) -> Result<Vec<OldHeader>, Error> {
   let mut contents = Vec::new();
 
   match File::open(filename) {
@@ -46,7 +48,7 @@ pub fn read_file(filename: &str) -> Result<Vec<Header>, Error> {
 }
 
 /// Read ILDA data from raw bytes.
-pub fn read_bytes(ilda_bytes: &[u8]) -> Result<Vec<Header>, Error> {
+pub fn read_bytes(ilda_bytes: &[u8]) -> Result<Vec<OldHeader>, Error> {
   if ilda_bytes.len() < 32 {
     println!("Error C");
     return Err(Error::InvalidFile { reason: "File too short.".to_string() });
@@ -66,21 +68,21 @@ pub fn read_bytes(ilda_bytes: &[u8]) -> Result<Vec<Header>, Error> {
         i += HEADER_SIZE;
 
         match &header {
-          &Header::IndexedFrame { records, is_3d, .. } => {
+          &OldHeader::IndexedFrame { records, is_3d, .. } => {
             if is_3d {
               i += INDEXED_3D_DATA_SIZE * records as usize;
             } else {
               i += INDEXED_2D_DATA_SIZE * records as usize;
             }
           },
-          &Header::TrueColorFrame { records, is_3d, .. } => {
+          &OldHeader::TrueColorFrame { records, is_3d, .. } => {
             if is_3d {
               i += TRUE_COLOR_3D_DATA_SIZE * records as usize;
             } else {
               i += TRUE_COLOR_2D_DATA_SIZE * records as usize;
             }
           },
-          &Header::ColorPalette { records, .. } => {
+          &OldHeader::ColorPalette { records, .. } => {
             i += COLOR_PALETTE_SIZE * records as usize;
           },
         }
@@ -93,7 +95,7 @@ pub fn read_bytes(ilda_bytes: &[u8]) -> Result<Vec<Header>, Error> {
   Ok(vec)
 }
 
-fn read_header(header_bytes: &[u8]) -> Result<Header, Error> {
+fn read_header(header_bytes: &[u8]) -> Result<OldHeader, Error> {
   if header_bytes.len() != 32
       || &header_bytes[0..4] != &ILDA_HEADER {
     return Err(Error::InvalidFormat);
@@ -110,7 +112,7 @@ fn read_header(header_bytes: &[u8]) -> Result<Header, Error> {
   let header = match header_bytes[7] {
     f @ 0u8 |
     f @ 1u8 => {
-      Header::IndexedFrame {
+      OldHeader::IndexedFrame {
         frame_name: name,
         company_name: company_name,
         records: number_of_records,
@@ -122,7 +124,7 @@ fn read_header(header_bytes: &[u8]) -> Result<Header, Error> {
       }
     },
     2u8 => {
-      Header::ColorPalette {
+      OldHeader::ColorPalette {
         palette_name: name,
         company_name: company_name,
         records: number_of_records,
@@ -133,7 +135,7 @@ fn read_header(header_bytes: &[u8]) -> Result<Header, Error> {
     },
     f @ 4u8 |
     f @ 5u8 => {
-      Header::TrueColorFrame {
+      OldHeader::TrueColorFrame {
         frame_name: name,
         company_name: company_name,
         records: number_of_records,
@@ -152,9 +154,9 @@ fn read_header(header_bytes: &[u8]) -> Result<Header, Error> {
   Ok(header)
 }
 
-fn read_data(header: &mut Header, bytes: &[u8] ) -> Result<Header, Error> {
+fn read_data(header: &mut OldHeader, bytes: &[u8] ) -> Result<OldHeader, Error> {
   match header {
-    &mut Header::IndexedFrame { records, is_3d, ref mut points, .. } => {
+    &mut OldHeader::IndexedFrame { records, is_3d, ref mut points, .. } => {
       if is_3d {
         let until = records as usize * INDEXED_3D_DATA_SIZE;
         let mut i = 0;
@@ -186,10 +188,10 @@ fn read_data(header: &mut Header, bytes: &[u8] ) -> Result<Header, Error> {
 
       return Err(Error::FileReadError); // TODO: Return type ?
     },
-    &mut Header::TrueColorFrame { .. } => {
+    &mut OldHeader::TrueColorFrame { .. } => {
       return Err(Error::FileReadError);
     },
-    &mut Header::ColorPalette { .. } => {
+    &mut OldHeader::ColorPalette { .. } => {
       return Err(Error::FileReadError);
     },
   }

@@ -1,5 +1,6 @@
 // Copyright (c) 2015 Brandon Thomas <bt@brand.io>
-
+//
+use data::Header;
 use data::IndexedPoint2d;
 use data::IndexedPoint3d;
 use data::TrueColorPoint2d;
@@ -45,7 +46,7 @@ pub struct Color {
 
 // TODO: De-enumify this.
 #[derive(Debug)]
-pub enum Header {
+pub enum OldHeader {
   /// A 2D or 3D frame where each point is assigned an RGB color.
   TrueColorFrame {
     frame_name: Option<String>,
@@ -96,16 +97,5 @@ pub enum Header {
     projector_number: u8, // TODO: Used?
     colors: Vec<Color>,
   },
-}
-
-
-#[derive(Debug)]
-pub enum IldaEntry {
-  HeaderEntry(Header),
-  TcPoint3dEntry(TrueColorPoint3d),
-  TcPoint2dEntry(TrueColorPoint2d),
-  ColorPaletteEntry(ColorPalette),
-  IdxPoint3dEntry(IndexedPoint3d),
-  IdxPoint2dEntry(IndexedPoint2d),
 }
 
