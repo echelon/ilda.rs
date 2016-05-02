@@ -34,35 +34,35 @@
 #[derive(Debug)]
 pub struct RawHeader {
   /// The first reserved portion of the ILDA header.
-  reserved: u16,
+  pub reserved: u16,
 
   /// The format, or type, of the header. 
-  format_code: u8,
+  pub format_code: u8,
 
   /// The name of the frame or color palette.
-  name: Option<String>, // TODO: Make this fixed-width.
+  pub name: Option<String>, // TODO: Make this fixed-width.
 
   /// The name of the company.
-  company_name: Option<String>, // TODO: Make this fixed-width.
+  pub company_name: Option<String>, // TODO: Make this fixed-width.
 
   /// The number of records (eg. points) following this header.
   /// If 0, this is the EOF header.
-  record_count: u16,
+  pub record_count: u16,
 
   /// If the frame is part of an animation, this is the frame number 
   /// within the animation sequence. If this is a color palette header,
   /// it's the palette number.
-  number: u16,
+  pub number: u16,
 
   /// The total number of frames within this sequence. If this is a
   /// color palette, this shall be `0`.
-  total_frames: u16,
+  pub total_frames: u16,
 
   /// The projector to display this frame on.
-  projector_number: u8,
+  pub projector_number: u8,
 
   /// The final reserved portion.
-  reserved_2: u8,
+  pub reserved_2: u8,
 }
 
 /// 3D Coordinates with Indexed Color (format 0)
@@ -117,7 +117,7 @@ pub struct TrueColorPoint2d {
 
 #[derive(Debug)]
 pub enum IldaEntry {
-  HeaderEntry(Header),
+  HeaderEntry(RawHeader),
   TcPoint3dEntry(TrueColorPoint3d),
   TcPoint2dEntry(TrueColorPoint2d),
   ColorPaletteEntry(ColorPalette),

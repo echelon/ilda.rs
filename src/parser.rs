@@ -1,5 +1,15 @@
 // Copyright (c) 2015-2016 Brandon Thomas <bt@brand.io>
 
+use data::ColorPalette;
+use data::IldaEntry;
+use data::IndexedPoint2d;
+use data::IndexedPoint3d;
+use data::RawHeader;
+use data::TrueColorPoint2d;
+use data::TrueColorPoint3d;
+use std::fs::File;
+use std::io::Read;
+
 // Various header and data payload sizes in bytes.
 const HEADER_SIZE : usize = 32;
 const COLOR_PALETTE_SIZE: usize = 3;
@@ -10,6 +20,13 @@ const TRUE_COLOR_3D_DATA_SIZE: usize = 10;
 
 // "ILDA" in ASCII.
 const ILDA_HEADER : [u8; 4] = [73u8, 76u8, 68u8, 65u8];
+
+// TODO: Revise errors.
+pub enum Error {
+  FileReadError,
+  InvalidFile{reason: String},
+  InvalidFormat,
+}
 
 pub fn read_file(filename: &str) -> Result<Vec<IldaEntry>, Error> {
   let mut contents = Vec::new();
@@ -76,7 +93,7 @@ pub fn read_bytes(ilda_bytes: &[u8]) -> Result<Vec<IldaEntry>, Error> {
           },
         }*/
 
-        vec.push(header);
+        vec.push(IldaEntry::HeaderEntry(header));
       },
     }
   }
