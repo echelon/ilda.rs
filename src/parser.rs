@@ -1,12 +1,13 @@
 // Copyright (c) 2015-2016 Brandon Thomas <bt@brand.io>
 
-use data::ColorPalette;
-use data::IldaEntry;
-use data::IndexedPoint2d;
-use data::IndexedPoint3d;
-use data::RawHeader;
-use data::TrueColorPoint2d;
 use data::TrueColorPoint3d;
+use data::TrueColorPoint2d;
+use data::RawHeader;
+use data::IndexedPoint3d;
+use data::IndexedPoint2d;
+use data::IldaEntry;
+use data::Format;
+use data::ColorPalette;
 use std::fs::File;
 use std::io::Read;
 
@@ -55,48 +56,90 @@ pub fn read_bytes(ilda_bytes: &[u8]) -> Result<Vec<IldaEntry>, Error> {
     return Err(Error::InvalidFile { reason: "File too short.".to_string() });
   }
 
+  enum NextRead { Header, I3d, I2d, Color, Tc3d, Tc2d };
+
   let mut vec = Vec::new();
   let mut i : usize = 0;
+  let mut next_read = NextRead::Header;
 
   while i < ilda_bytes.len() {
+
+    match next_read {
+      NextRead::Header => {
+
+        // TODO TODO TODO 
+        // TODO TODO TODO 
+        // TODO TODO TODO 
+        // TODO TODO TODO 
+        // TODO TODO TODO 
+
+        match read_header(&ilda_bytes[i .. i + HEADER_SIZE]) {
+          Err(err) => {
+            return Err(err);
+          },
+          Ok(mut header) => {
+            next_read = match header.get_format() {
+              Format::Indexed3d => NextRead::I3d,
+              Format::Indexed2d => NextRead::I2d,
+              Format::ColorPalette => NextRead::Color,
+              Format::TrueColor3d => NextRead::Tc3d,
+              Format::TrueColor2d => NextRead::Tc2d,
+              Format::Unknown => {
+                return Err(Error::InvalidFile { reason: "Bad format.".to_string() });
+              },
+            };
+            vec.push(IldaEntry::HeaderEntry(header));
+          }
+        };
+      },
+      NextRead::I3d => {
+        next_read = NextRead::Header;
+      },
+      NextRead::I2d => {
+        next_read = NextRead::Header;
+      },
+      NextRead::Color => {
+        next_read = NextRead::Header;
+      },
+      NextRead::Tc3d => {
+        next_read = NextRead::Header;
+      },
+      NextRead::Tc2d => {
+        next_read = NextRead::Header;
+      },
+    };
+  }
+
+
     //
     //
     // TODO: Update this...
     //
     //
-    match read_header(&ilda_bytes[i .. i + HEADER_SIZE]) {
-      Err(err) => {
-        return Err(err);
+
+    /*read_data(&mut header, &ilda_bytes[i + HEADER_SIZE ..]);
+
+    i += HEADER_SIZE;
+
+    match &header {
+      &OldHeader::IndexedFrame { records, is_3d, .. } => {
+        if is_3d {
+          i += INDEXED_3D_DATA_SIZE * records as usize;
+        } else {
+          i += INDEXED_2D_DATA_SIZE * records as usize;
+        }
       },
-      Ok(mut header) => {
-        /*read_data(&mut header, &ilda_bytes[i + HEADER_SIZE ..]);
-
-        i += HEADER_SIZE;
-
-        match &header {
-          &OldHeader::IndexedFrame { records, is_3d, .. } => {
-            if is_3d {
-              i += INDEXED_3D_DATA_SIZE * records as usize;
-            } else {
-              i += INDEXED_2D_DATA_SIZE * records as usize;
-            }
-          },
-          &OldHeader::TrueColorFrame { records, is_3d, .. } => {
-            if is_3d {
-              i += TRUE_COLOR_3D_DATA_SIZE * records as usize;
-            } else {
-              i += TRUE_COLOR_2D_DATA_SIZE * records as usize;
-            }
-          },
-          &OldHeader::ColorPalette { records, .. } => {
-            i += COLOR_PALETTE_SIZE * records as usize;
-          },
-        }*/
-
-        vec.push(IldaEntry::HeaderEntry(header));
+      &OldHeader::TrueColorFrame { records, is_3d, .. } => {
+        if is_3d {
+          i += TRUE_COLOR_3D_DATA_SIZE * records as usize;
+        } else {
+          i += TRUE_COLOR_2D_DATA_SIZE * records as usize;
+        }
       },
-    }
-  }
+      &OldHeader::ColorPalette { records, .. } => {
+        i += COLOR_PALETTE_SIZE * records as usize;
+      },
+    }*/
 
   Ok(vec)
 }

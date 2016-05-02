@@ -29,6 +29,16 @@
 
 */
 
+/// The payload encoding formats currently supported.
+pub enum Format {
+  Unknown,
+  ColorPalette,
+  Indexed2d,
+  Indexed3d,
+  TrueColor2d,
+  TrueColor3d,
+}
+
 // TODO: Name `Header`
 /// A Raw ILDA header.
 #[derive(Debug)]
@@ -63,6 +73,20 @@ pub struct RawHeader {
 
   /// The final reserved portion.
   pub reserved_2: u8,
+}
+
+impl RawHeader {
+  /// Returns the format of the header.
+  pub fn get_format(&self) -> Format {
+    match self.format_code {
+      0u8 => Format::Indexed3d,
+      1u8 => Format::Indexed2d,
+      2u8 => Format::ColorPalette,
+      4u8 => Format::TrueColor3d,
+      5u8 => Format::TrueColor2d,
+      _ => Format::Unknown,
+    }
+  }
 }
 
 /// 3D Coordinates with Indexed Color (format 0)
