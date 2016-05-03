@@ -29,6 +29,18 @@
 
 */
 
+const HEADER_SIZE : usize = 32;
+const COLOR_PALETTE_SIZE: usize = 3;
+const INDEXED_2D_DATA_SIZE: usize = 6;
+const INDEXED_3D_DATA_SIZE: usize = 8;
+const TRUE_COLOR_2D_DATA_SIZE: usize = 8;
+const TRUE_COLOR_3D_DATA_SIZE: usize = 10;
+
+pub enum ReadError {
+  /// The wrong number of bytes has been supplied for reading.
+  WrongSize,
+}
+
 /// The payload encoding formats currently supported.
 pub enum Format {
   Unknown,
@@ -99,6 +111,22 @@ pub struct IndexedPoint3d {
   pub color_index: i8,
 }
 
+impl IndexedPoint3d {
+  /// Read an `IndexedPoint3d` from raw bytes.
+  pub fn from_bytes(bytes: &[u8]) -> Result<IndexedPoint3d, ReadError> {
+    if bytes.len() != INDEXED_3D_DATA_SIZE {
+      return Err(ReadError::WrongSize);
+    }
+    Ok(IndexedPoint3d {
+      x: read_i16(&bytes[0..1]),
+      y: read_i16(&bytes[2..3]),
+      z: read_i16(&bytes[4..5]),
+      status_code: bytes[6] as i8,
+      color_index: bytes[7] as i8,
+    })
+  }
+}
+
 /// 2D Coordinates with Indexed Color (format 1)
 #[derive(Debug)]
 pub struct IndexedPoint2d {
@@ -128,6 +156,48 @@ pub struct TrueColorPoint3d {
   pub r: u8,
 }
 
+impl TrueColorPoint3d {
+  /// Read a single `TrueColorPoint3d` from raw bytes.
+  pub fn from_bytes(bytes: &[u8]) -> Result<TrueColorPoint3d, ReadError> {
+    if bytes.len() != TRUE_COLOR_3D_DATA_SIZE {
+      return Err(ReadError::WrongSize);
+    }
+    Ok(TrueColorPoint3d {
+      x: read_i16(&bytes[0..1]),
+      y: read_i16(&bytes[2..3]),
+      z: read_i16(&bytes[4..5]),
+      status_code: bytes[6] as i8,
+      b: bytes[7],
+      g: bytes[8],
+      r: bytes[9],
+    })
+  }
+
+  /// Read multiple `TrueColorPoint3d` from raw bytes.
+  pub fn read_bytes(bytes: &[u8]) -> Result<Vec<TrueColorPoint3d>, ReadError> {
+    if bytes.len() % TRUE_COLOR_3D_DATA_SIZE != 0 {
+      return Err(ReadError::WrongSize);
+    }
+
+    let size = bytes.len() / TRUE_COLOR_3D_DATA_SIZE;
+    let mut out = Vec::with_capacity(size);
+
+    for i in 0..size {
+      out.push(TrueColorPoint3d {
+        x: read_i16(&bytes[0..1]),
+        y: read_i16(&bytes[2..3]),
+        z: read_i16(&bytes[4..5]),
+        status_code: bytes[6] as i8,
+        b: bytes[7],
+        g: bytes[8],
+        r: bytes[9],
+      });
+    }
+
+    Ok(out)
+  }
+}
+
 /// 3D Coordinates with True Color (format 5)
 #[derive(Debug)]
 pub struct TrueColorPoint2d {
@@ -147,5 +217,15 @@ pub enum IldaEntry {
   ColorPaletteEntry(ColorPalette),
   IdxPoint3dEntry(IndexedPoint3d),
   IdxPoint2dEntry(IndexedPoint2d),
+}
+
+// TODO: DE-DUPLICATE
+// TODO/FIXME: Does Rust's casting use 2's complement? Do some maths.
+fn read_i16(bytes: &[u8]) -> i16 {
+  (((bytes[0] as u16) << 8) | (bytes[1] as u16)) as i16
+}
+
+fn read_u16(bytes: &[u8]) -> u16 {
+  ((bytes[0] as u16) << 8) | (bytes[1] as u16)
 }
 

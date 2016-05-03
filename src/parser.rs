@@ -27,6 +27,7 @@ pub enum Error {
   FileReadError,
   InvalidFile{reason: String},
   InvalidFormat,
+  Unimplemented, // TODO TEMP
 }
 
 pub fn read_file(filename: &str) -> Result<Vec<IldaEntry>, Error> {
@@ -61,18 +62,11 @@ pub fn read_bytes(ilda_bytes: &[u8]) -> Result<Vec<IldaEntry>, Error> {
   let mut vec = Vec::new();
   let mut i : usize = 0;
   let mut next_read = NextRead::Header;
+  let mut frames_left = 0;
 
   while i < ilda_bytes.len() {
-
     match next_read {
       NextRead::Header => {
-
-        // TODO TODO TODO 
-        // TODO TODO TODO 
-        // TODO TODO TODO 
-        // TODO TODO TODO 
-        // TODO TODO TODO 
-
         match read_header(&ilda_bytes[i .. i + HEADER_SIZE]) {
           Err(err) => {
             return Err(err);
@@ -88,24 +82,34 @@ pub fn read_bytes(ilda_bytes: &[u8]) -> Result<Vec<IldaEntry>, Error> {
                 return Err(Error::InvalidFile { reason: "Bad format.".to_string() });
               },
             };
+
+            frames_left = header.record_count;
             vec.push(IldaEntry::HeaderEntry(header));
+            i += HEADER_SIZE;
           }
         };
       },
       NextRead::I3d => {
-        next_read = NextRead::Header;
+        if frames_left < 1 {
+          next_read = NextRead::Header;
+        }
+        i += INDEXED_3D_DATA_SIZE;
       },
       NextRead::I2d => {
-        next_read = NextRead::Header;
+        i += INDEXED_2D_DATA_SIZE;
+        return Err(Error::Unimplemented);
       },
       NextRead::Color => {
-        next_read = NextRead::Header;
+        i += COLOR_PALETTE_SIZE;
+        return Err(Error::Unimplemented);
       },
       NextRead::Tc3d => {
-        next_read = NextRead::Header;
+        i += TRUE_COLOR_3D_DATA_SIZE;
+        return Err(Error::Unimplemented);
       },
       NextRead::Tc2d => {
-        next_read = NextRead::Header;
+        i += TRUE_COLOR_2D_DATA_SIZE;
+        return Err(Error::Unimplemented);
       },
     };
   }
