@@ -167,7 +167,6 @@ impl IndexedPoint2d {
   }
 }
 
-
 /// Color Palette (format 2)
 #[derive(Clone, Debug)]
 pub struct ColorPalette {
@@ -175,6 +174,29 @@ pub struct ColorPalette {
   pub g: u8,
   pub b: u8,
 }
+
+impl ColorPalette {
+  /// Read multiple `ColorPalette` from raw bytes.
+  pub fn read_bytes(bytes: &[u8]) -> Result<Vec<ColorPalette>, ReadError> {
+    if bytes.len() % COLOR_PALETTE_SIZE != 0 {
+      return Err(ReadError::WrongSize);
+    }
+
+    let size = bytes.len() / COLOR_PALETTE_SIZE;
+    let mut out = Vec::with_capacity(size);
+
+    for i in 0..size {
+      out.push(ColorPalette {
+        r: bytes[0],
+        g: bytes[1],
+        b: bytes[2],
+      });
+    }
+
+    Ok(out)
+  }
+}
+
 
 /// 3D Coordinates with True Color (format 4)
 #[derive(Clone, Debug)]

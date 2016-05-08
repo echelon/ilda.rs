@@ -123,8 +123,20 @@ pub fn read_bytes(ilda_bytes: &[u8]) -> Result<Vec<IldaEntry>, Error> {
         i += end;
       },
       NextRead::Color => {
-        i += COLOR_PALETTE_SIZE;
-        return Err(Error::Unimplemented);
+        let end = COLOR_PALETTE_SIZE * frames_to_read as usize;
+        match ColorPalette::read_bytes(&ilda_bytes[i .. i + end]) {
+          Err(err) => {
+            return Err(Error::InvalidFormat); // TODO: Better error
+          },
+          Ok(mut points) => {
+            let mut entries = points.iter()
+              .map(|x| IldaEntry::ColorPaletteEntry(x.clone()))
+              .collect();
+            vec.append(&mut entries);
+          },
+        }
+        next_read = NextRead::Header;
+        i += end;
       },
       NextRead::Tc3d => {
         let end = TRUE_COLOR_3D_DATA_SIZE * frames_to_read as usize;
