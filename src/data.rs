@@ -1,4 +1,6 @@
-// Copyright (c) 2016 Brandon Thomas <bt@brand.io>
+// Copyright (c) 2016 Brandon Thomas <bt@brand.io>, <echelon@gmail.com>
+
+// TODO(echelon): verify the struct fields are signed/unsigned correctly
 
 // Coordinate data
 // 33 - 34    X coord, signed 2's compliment, -32768, +32767
@@ -29,12 +31,12 @@
 
 */
 
-const HEADER_SIZE : usize = 32;
-const COLOR_PALETTE_SIZE: usize = 3;
-const INDEXED_2D_DATA_SIZE: usize = 6;
-const INDEXED_3D_DATA_SIZE: usize = 8;
-const TRUE_COLOR_2D_DATA_SIZE: usize = 8;
-const TRUE_COLOR_3D_DATA_SIZE: usize = 10;
+pub const HEADER_SIZE : usize = 32;
+pub const COLOR_PALETTE_SIZE: usize = 3;
+pub const INDEXED_2D_DATA_SIZE: usize = 6;
+pub const INDEXED_3D_DATA_SIZE: usize = 8;
+pub const TRUE_COLOR_2D_DATA_SIZE: usize = 8;
+pub const TRUE_COLOR_3D_DATA_SIZE: usize = 10;
 
 pub enum ReadError {
   /// The wrong number of bytes has been supplied for reading.
@@ -121,7 +123,7 @@ impl IndexedPoint3d {
     let size = bytes.len() / INDEXED_3D_DATA_SIZE;
     let mut out = Vec::with_capacity(size);
 
-    for i in 0..size {
+    for _ in 0..size {
       out.push(IndexedPoint3d {
         x: read_i16(&bytes[0..2]),
         y: read_i16(&bytes[2..4]),
@@ -154,7 +156,7 @@ impl IndexedPoint2d {
     let size = bytes.len() / INDEXED_2D_DATA_SIZE;
     let mut out = Vec::with_capacity(size);
 
-    for i in 0..size {
+    for _ in 0..size {
       out.push(IndexedPoint2d {
         x: read_i16(&bytes[0..2]),
         y: read_i16(&bytes[2..4]),
@@ -185,7 +187,7 @@ impl ColorPalette {
     let size = bytes.len() / COLOR_PALETTE_SIZE;
     let mut out = Vec::with_capacity(size);
 
-    for i in 0..size {
+    for _ in 0..size {
       out.push(ColorPalette {
         r: bytes[0],
         g: bytes[1],
@@ -220,7 +222,7 @@ impl TrueColorPoint3d {
     let size = bytes.len() / TRUE_COLOR_3D_DATA_SIZE;
     let mut out = Vec::with_capacity(size);
 
-    for i in 0..size {
+    for _ in 0..size {
       out.push(TrueColorPoint3d {
         x: read_i16(&bytes[0..2]),
         y: read_i16(&bytes[2..4]),
@@ -257,7 +259,7 @@ impl TrueColorPoint2d {
     let size = bytes.len() / TRUE_COLOR_2D_DATA_SIZE;
     let mut out = Vec::with_capacity(size);
 
-    for i in 0..size {
+    for _ in 0..size {
       out.push(TrueColorPoint2d {
         x: read_i16(&bytes[0..2]),
         y: read_i16(&bytes[2..4]),

@@ -1,23 +1,21 @@
 // Copyright (c) 2015-2016 Brandon Thomas <bt@brand.io>
 
-use data::TrueColorPoint3d;
-use data::TrueColorPoint2d;
-use data::RawHeader;
-use data::IndexedPoint3d;
-use data::IndexedPoint2d;
-use data::IldaEntry;
-use data::Format;
+use data::COLOR_PALETTE_SIZE;
 use data::ColorPalette;
+use data::Format;
+use data::HEADER_SIZE;
+use data::INDEXED_2D_DATA_SIZE;
+use data::INDEXED_3D_DATA_SIZE;
+use data::IldaEntry;
+use data::IndexedPoint2d;
+use data::IndexedPoint3d;
+use data::RawHeader;
+use data::TRUE_COLOR_2D_DATA_SIZE;
+use data::TRUE_COLOR_3D_DATA_SIZE;
+use data::TrueColorPoint2d;
+use data::TrueColorPoint3d;
 use std::fs::File;
 use std::io::Read;
-
-// Various header and data payload sizes in bytes.
-const HEADER_SIZE : usize = 32;
-const COLOR_PALETTE_SIZE: usize = 3;
-const INDEXED_2D_DATA_SIZE: usize = 6;
-const INDEXED_3D_DATA_SIZE: usize = 8;
-const TRUE_COLOR_2D_DATA_SIZE: usize = 8;
-const TRUE_COLOR_3D_DATA_SIZE: usize = 10;
 
 // "ILDA" in ASCII.
 const ILDA_HEADER : [u8; 4] = [73u8, 76u8, 68u8, 65u8];

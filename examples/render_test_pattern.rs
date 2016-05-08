@@ -3,17 +3,14 @@ extern crate ilda;
 extern crate image;
 
 use ilda::parser::read_file;
-//use image;
 use std::fs::File;
 use std::path::Path;
 
 pub fn main() {
   let result = read_file("./examples/ildatest.ild")
     .ok().unwrap();
+
   println!("{:?}", result);
-
-
-
 
   let mut imgbuf = image::ImageBuffer::new(800, 800);
 
