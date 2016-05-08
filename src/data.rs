@@ -112,20 +112,6 @@ pub struct IndexedPoint3d {
 }
 
 impl IndexedPoint3d {
-  /// Read an `IndexedPoint3d` from raw bytes.
-  pub fn from_bytes(bytes: &[u8]) -> Result<IndexedPoint3d, ReadError> {
-    if bytes.len() != INDEXED_3D_DATA_SIZE {
-      return Err(ReadError::WrongSize);
-    }
-    Ok(IndexedPoint3d {
-      x: read_i16(&bytes[0..1]),
-      y: read_i16(&bytes[2..3]),
-      z: read_i16(&bytes[4..5]),
-      status_code: bytes[6] as i8,
-      color_index: bytes[7] as i8,
-    })
-  }
-
   /// Read multiple `IndexedPoint3d` from raw bytes.
   pub fn read_bytes(bytes: &[u8]) -> Result<Vec<IndexedPoint3d>, ReadError> {
     if bytes.len() % INDEXED_3D_DATA_SIZE != 0 {
@@ -179,22 +165,6 @@ pub struct TrueColorPoint3d {
 }
 
 impl TrueColorPoint3d {
-  /// Read a single `TrueColorPoint3d` from raw bytes.
-  pub fn from_bytes(bytes: &[u8]) -> Result<TrueColorPoint3d, ReadError> {
-    if bytes.len() != TRUE_COLOR_3D_DATA_SIZE {
-      return Err(ReadError::WrongSize);
-    }
-    Ok(TrueColorPoint3d {
-      x: read_i16(&bytes[0..1]),
-      y: read_i16(&bytes[2..3]),
-      z: read_i16(&bytes[4..5]),
-      status_code: bytes[6] as i8,
-      b: bytes[7],
-      g: bytes[8],
-      r: bytes[9],
-    })
-  }
-
   /// Read multiple `TrueColorPoint3d` from raw bytes.
   pub fn read_bytes(bytes: &[u8]) -> Result<Vec<TrueColorPoint3d>, ReadError> {
     if bytes.len() % TRUE_COLOR_3D_DATA_SIZE != 0 {
