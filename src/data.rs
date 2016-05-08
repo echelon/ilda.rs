@@ -53,7 +53,7 @@ pub enum Format {
 
 // TODO: Name `Header`
 /// A Raw ILDA header.
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct RawHeader {
   /// The first reserved portion of the ILDA header.
   pub reserved: u16,
@@ -102,7 +102,7 @@ impl RawHeader {
 }
 
 /// 3D Coordinates with Indexed Color (format 0)
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct IndexedPoint3d {
   pub x: i16,
   pub y: i16,
@@ -128,7 +128,7 @@ impl IndexedPoint3d {
 }
 
 /// 2D Coordinates with Indexed Color (format 1)
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct IndexedPoint2d {
   pub x: i16,
   pub y: i16,
@@ -137,7 +137,7 @@ pub struct IndexedPoint2d {
 }
 
 /// Color Palette (format 2)
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct ColorPalette {
   pub r: u8,
   pub g: u8,
@@ -145,7 +145,7 @@ pub struct ColorPalette {
 }
 
 /// 3D Coordinates with True Color (format 4)
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct TrueColorPoint3d {
   pub x: i16,
   pub y: i16,
@@ -199,7 +199,7 @@ impl TrueColorPoint3d {
 }
 
 /// 3D Coordinates with True Color (format 5)
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct TrueColorPoint2d {
   pub x: i16,
   pub y: i16,
@@ -209,7 +209,7 @@ pub struct TrueColorPoint2d {
   pub r: u8,
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub enum IldaEntry {
   HeaderEntry(RawHeader),
   TcPoint3dEntry(TrueColorPoint3d),
