@@ -107,8 +107,20 @@ pub fn read_bytes(ilda_bytes: &[u8]) -> Result<Vec<IldaEntry>, Error> {
         i += end;
       },
       NextRead::I2d => {
-        i += INDEXED_2D_DATA_SIZE;
-        return Err(Error::Unimplemented);
+        let end = INDEXED_2D_DATA_SIZE * frames_to_read as usize;
+        match IndexedPoint2d::read_bytes(&ilda_bytes[i .. i + end]) {
+          Err(err) => {
+            return Err(Error::InvalidFormat); // TODO: Better error
+          },
+          Ok(mut points) => {
+            let mut entries = points.iter()
+              .map(|x| IldaEntry::IdxPoint2dEntry(x.clone()))
+              .collect();
+            vec.append(&mut entries);
+          },
+        }
+        next_read = NextRead::Header;
+        i += end;
       },
       NextRead::Color => {
         i += COLOR_PALETTE_SIZE;
@@ -131,42 +143,23 @@ pub fn read_bytes(ilda_bytes: &[u8]) -> Result<Vec<IldaEntry>, Error> {
         i += end;
       },
       NextRead::Tc2d => {
-        i += TRUE_COLOR_2D_DATA_SIZE;
-        return Err(Error::Unimplemented);
+        let end = TRUE_COLOR_2D_DATA_SIZE * frames_to_read as usize;
+        match TrueColorPoint2d::read_bytes(&ilda_bytes[i .. i + end]) {
+          Err(err) => {
+            return Err(Error::InvalidFormat); // TODO: Better error
+          },
+          Ok(mut points) => {
+            let mut entries = points.iter()
+              .map(|x| IldaEntry::TcPoint2dEntry(x.clone()))
+              .collect();
+            vec.append(&mut entries);
+          },
+        }
+        next_read = NextRead::Header;
+        i += end;
       },
     };
   }
-
-
-    //
-    //
-    // TODO: Update this...
-    //
-    //
-
-    /*read_data(&mut header, &ilda_bytes[i + HEADER_SIZE ..]);
-
-    i += HEADER_SIZE;
-
-    match &header {
-      &OldHeader::IndexedFrame { records, is_3d, .. } => {
-        if is_3d {
-          i += INDEXED_3D_DATA_SIZE * records as usize;
-        } else {
-          i += INDEXED_2D_DATA_SIZE * records as usize;
-        }
-      },
-      &OldHeader::TrueColorFrame { records, is_3d, .. } => {
-        if is_3d {
-          i += TRUE_COLOR_3D_DATA_SIZE * records as usize;
-        } else {
-          i += TRUE_COLOR_2D_DATA_SIZE * records as usize;
-        }
-      },
-      &OldHeader::ColorPalette { records, .. } => {
-        i += COLOR_PALETTE_SIZE * records as usize;
-      },
-    }*/
 
   Ok(vec)
 }

@@ -1,6 +1,6 @@
 // Copyright (c) 2015 Brandon Thomas <bt@brand.io>
 
-// TODO: rename module `parser`
+// TODO: DELETE THIS
 
 use idtf::OldHeader;
 use idtf::IndexedPoint;

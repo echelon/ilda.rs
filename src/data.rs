@@ -144,6 +144,30 @@ pub struct IndexedPoint2d {
   pub color_index: i8,
 }
 
+impl IndexedPoint2d {
+  /// Read multiple `IndexedPoint2d` from raw bytes.
+  pub fn read_bytes(bytes: &[u8]) -> Result<Vec<IndexedPoint2d>, ReadError> {
+    if bytes.len() % INDEXED_2D_DATA_SIZE != 0 {
+      return Err(ReadError::WrongSize);
+    }
+
+    let size = bytes.len() / INDEXED_2D_DATA_SIZE;
+    let mut out = Vec::with_capacity(size);
+
+    for i in 0..size {
+      out.push(IndexedPoint2d {
+        x: read_i16(&bytes[0..2]),
+        y: read_i16(&bytes[2..4]),
+        status_code: bytes[4] as i8,
+        color_index: bytes[5] as i8,
+      });
+    }
+
+    Ok(out)
+  }
+}
+
+
 /// Color Palette (format 2)
 #[derive(Clone, Debug)]
 pub struct ColorPalette {
@@ -176,9 +200,9 @@ impl TrueColorPoint3d {
 
     for i in 0..size {
       out.push(TrueColorPoint3d {
-        x: read_i16(&bytes[0..1]),
-        y: read_i16(&bytes[2..3]),
-        z: read_i16(&bytes[4..5]),
+        x: read_i16(&bytes[0..2]),
+        y: read_i16(&bytes[2..4]),
+        z: read_i16(&bytes[4..6]),
         status_code: bytes[6] as i8,
         b: bytes[7],
         g: bytes[8],
@@ -195,10 +219,35 @@ impl TrueColorPoint3d {
 pub struct TrueColorPoint2d {
   pub x: i16,
   pub y: i16,
-  pub z: i16,
+  pub status_code: i8,
   pub b: u8,
   pub g: u8,
   pub r: u8,
+}
+
+impl TrueColorPoint2d {
+  /// Read multiple `TrueColorPoint2d` from raw bytes.
+  pub fn read_bytes(bytes: &[u8]) -> Result<Vec<TrueColorPoint2d>, ReadError> {
+    if bytes.len() % TRUE_COLOR_2D_DATA_SIZE != 0 {
+      return Err(ReadError::WrongSize);
+    }
+
+    let size = bytes.len() / TRUE_COLOR_2D_DATA_SIZE;
+    let mut out = Vec::with_capacity(size);
+
+    for i in 0..size {
+      out.push(TrueColorPoint2d {
+        x: read_i16(&bytes[0..2]),
+        y: read_i16(&bytes[2..4]),
+        status_code: bytes[4] as i8,
+        b: bytes[5],
+        g: bytes[6],
+        r: bytes[7],
+      });
+    }
+
+    Ok(out)
+  }
 }
 
 #[derive(Clone, Debug)]
