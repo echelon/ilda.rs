@@ -2,7 +2,8 @@
 extern crate ilda;
 extern crate image;
 
-use ilda::reader::read_file;
+//use ilda::reader::read_file;
+use ilda::parser::read_file;
 //use image;
 use std::fs::File;
 use std::path::Path;

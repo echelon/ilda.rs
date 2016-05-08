@@ -64,6 +64,7 @@ pub fn read_bytes(ilda_bytes: &[u8]) -> Result<Vec<IldaEntry>, Error> {
   let mut next_read = NextRead::Header;
   let mut frames_to_read = 0;
 
+  // TODO(echelon): This isn't very concise. 
   while i < ilda_bytes.len() {
     match next_read {
       NextRead::Header => {
@@ -90,7 +91,20 @@ pub fn read_bytes(ilda_bytes: &[u8]) -> Result<Vec<IldaEntry>, Error> {
         };
       },
       NextRead::I3d => {
-        i += INDEXED_3D_DATA_SIZE;
+        let end = INDEXED_3D_DATA_SIZE * frames_to_read as usize;
+        match IndexedPoint3d::read_bytes(&ilda_bytes[i .. i + end]) {
+          Err(err) => {
+            return Err(Error::InvalidFormat); // TODO: Better error
+          },
+          Ok(mut points) => {
+            let mut entries = points.iter()
+              .map(|x| IldaEntry::IdxPoint3dEntry(x.clone()))
+              .collect();
+            vec.append(&mut entries);
+          },
+        }
+        next_read = NextRead::Header;
+        i += end;
       },
       NextRead::I2d => {
         i += INDEXED_2D_DATA_SIZE;

@@ -125,6 +125,28 @@ impl IndexedPoint3d {
       color_index: bytes[7] as i8,
     })
   }
+
+  /// Read multiple `IndexedPoint3d` from raw bytes.
+  pub fn read_bytes(bytes: &[u8]) -> Result<Vec<IndexedPoint3d>, ReadError> {
+    if bytes.len() % INDEXED_3D_DATA_SIZE != 0 {
+      return Err(ReadError::WrongSize);
+    }
+
+    let size = bytes.len() / INDEXED_3D_DATA_SIZE;
+    let mut out = Vec::with_capacity(size);
+
+    for i in 0..size {
+      out.push(IndexedPoint3d {
+        x: read_i16(&bytes[0..2]),
+        y: read_i16(&bytes[2..4]),
+        z: read_i16(&bytes[4..6]),
+        status_code: bytes[6] as i8,
+        color_index: bytes[7] as i8,
+      });
+    }
+
+    Ok(out)
+  }
 }
 
 /// 2D Coordinates with Indexed Color (format 1)
