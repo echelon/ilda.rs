@@ -39,7 +39,6 @@ pub enum Format {
 
 pub mod idtf;
 pub mod data;
-pub mod reader;
 pub mod parser;
 pub mod limit;
 

@@ -262,7 +262,7 @@ pub enum IldaEntry {
   IdxPoint2dEntry(IndexedPoint2d),
 }
 
-// FIXME: 
+// FIXME:
 // Reads in as little endian from big endian source. Not cross-platform.
 fn read_i16(bytes: &[u8]) -> i16 {
   (((bytes[0] as u16) << 8) | (bytes[1] as u16)) as i16

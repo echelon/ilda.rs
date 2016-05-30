@@ -51,8 +51,9 @@ pub fn read_file(filename: &str) -> Result<Vec<IldaEntry>, Error> {
 /// Read ILDA data from raw bytes.
 pub fn read_bytes(ilda_bytes: &[u8]) -> Result<Vec<IldaEntry>, Error> {
   if ilda_bytes.len() < 32 {
-    println!("Error C");
-    return Err(Error::InvalidFile { reason: "File too short.".to_string() });
+    return Err(Error::InvalidFile {
+      reason: "File too short.".to_string()
+    });
   }
 
   enum NextRead { Header, I3d, I2d, Color, Tc3d, Tc2d };
@@ -62,7 +63,7 @@ pub fn read_bytes(ilda_bytes: &[u8]) -> Result<Vec<IldaEntry>, Error> {
   let mut next_read = NextRead::Header;
   let mut frames_to_read = 0;
 
-  // TODO(echelon): This isn't very concise. 
+  // TODO(echelon): This isn't very concise.
   while i < ilda_bytes.len() {
     match next_read {
       NextRead::Header => {
@@ -226,5 +227,43 @@ fn read_i16(bytes: &[u8]) -> i16 {
 
 fn read_u16(bytes: &[u8]) -> u16 {
   ((bytes[0] as u16) << 8) | (bytes[1] as u16)
+}
+
+#[cfg(test)]
+mod tests {
+  use super::read_name;
+  use super::read_i16;
+  use super::read_u16;
+
+  #[test]
+  fn test_read_name() {
+    assert_eq!(read_name(&[0, 0, 0, 0]), None);
+    assert_eq!(read_name(&[0, 100, 100, 100]), None);
+    assert_eq!(read_name(&[102, 111, 111]), Some("foo".to_string()));
+    assert_eq!(read_name(&[102, 111, 111, 0, 111]),
+               Some("foo".to_string()));
+  }
+
+  #[test]
+  fn test_read_i16() {
+    assert_eq!(read_i16(&[0u8, 0u8]), 0i16);
+    assert_eq!(read_i16(&[0u8, 255u8]), 255i16);
+    assert_eq!(read_i16(&[127u8, 255u8]), 32767i16);
+    assert_eq!(read_i16(&[128u8, 0u8]), -32768i16);
+    assert_eq!(read_i16(&[128u8, 255u8]), -32513i16);
+    assert_eq!(read_i16(&[255u8, 0u8]), -256);
+    assert_eq!(read_i16(&[255u8, 1u8]), -255);
+    assert_eq!(read_i16(&[255u8, 255u8]), -1);
+  }
+
+  #[test]
+  fn test_read_u16() {
+    assert_eq!(read_u16(&[0u8, 0u8]), 0u16);
+    assert_eq!(read_u16(&[0u8, 100u8]), 100u16);
+    assert_eq!(read_u16(&[0u8, 255u8]), 255u16);
+    assert_eq!(read_u16(&[1u8, 0u8]), 256u16);
+    assert_eq!(read_u16(&[255u8, 0u8]), 65280u16);
+    assert_eq!(read_u16(&[255u8, 255u8]), 65535u16);
+  }
 }
 

@@ -54,7 +54,7 @@ pub enum OldHeader {
     /// The number of points records following this header.
     /// If 0, this is the EOF header.
     records: u16,
-    /// If the frame is part of an animation, this is the frame number 
+    /// If the frame is part of an animation, this is the frame number
     /// within the animation sequence.
     frame_number: u16,
     /// The number of frames within this sequence.
@@ -73,7 +73,7 @@ pub enum OldHeader {
     /// The number of points records following this header.
     /// If 0, this is the EOF header.
     records: u16,
-    /// If the frame is part of an animation, this is the frame number 
+    /// If the frame is part of an animation, this is the frame number
     /// within the animation sequence.
     frame_number: u16,
     /// The number of frames within this sequence.
