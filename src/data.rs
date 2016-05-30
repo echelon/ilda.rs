@@ -296,10 +296,12 @@ pub enum IldaEntry {
 // TODO: DE-DUPLICATE
 // TODO/FIXME: Does Rust's casting use 2's complement? Do some maths.
 fn read_i16(bytes: &[u8]) -> i16 {
-  (((bytes[0] as u16) << 8) | (bytes[1] as u16)) as i16
+  (((u8::from_be(bytes[0]) as u16) << 8) 
+   | (u8::from_be(bytes[1]) as u16)) as i16
 }
 
 fn read_u16(bytes: &[u8]) -> u16 {
-  ((bytes[0] as u16) << 8) | (bytes[1] as u16)
+  ((u8::from_be(bytes[0]) as u16) << 8) 
+    | (u8::from_be(bytes[1]) as u16)
 }
 
