@@ -1,5 +1,5 @@
 // Copyright (c) 2015 Brandon Thomas <bt@brand.io>
-//
+
 use data::RawHeader;
 use data::IndexedPoint2d;
 use data::IndexedPoint3d;

@@ -12,32 +12,16 @@ const WIDTH : u32 = 1200;
 const HEIGHT : u32 = 1200;
 
 pub fn main() {
-  //let result = read_file("./examples/ildatest.ild")
-  let result = read_file("./examples/nyancat.ild")
-  //let result = read_file("./examples/files/+burst.ild")
-  //let result = read_file("./examples/files/100prcnt.ild")
+  let result = read_file("./examples/files/ildatest.ild")
     .ok().unwrap();
-
-  //println!("{:?}", result);
 
   let mut imgbuf = image::ImageBuffer::new(WIDTH, HEIGHT);
 
   for entry in result {
-    //println!("Entry: {:?}", entry);
     match entry {
-      IldaEntry::HeaderEntry(header) => {
-        println!("Header: {:?}", header);
-      },
+      //IldaEntry::HeaderEntry(header) => {},
       IldaEntry::TcPoint2dEntry(pt) => {
-        if pt.r < 100 && pt.g < 100 && pt.b < 100 {
-          continue;
-        }
-
-        //println!("{}, {}, {}", pt.r, pt.g, pt.b);
-
-        //let pixel = image::Rgb([255u8, pt.g, pt.b]);
         let pixel = image::Rgb([pt.r, pt.g, pt.b]);
-        //let pixel = image::Rgb([255u8, 255u8, 255u8]);
         let x = t_x(pt.x, WIDTH);
         let y = t_y(pt.y, HEIGHT);
         imgbuf.put_pixel(x, y, pixel);
@@ -51,15 +35,6 @@ pub fn main() {
       _ => {},
     }
   }
-
-  /*for i in (0..800) {
-    let perc = (i as f32) / (800 as f32);
-    let cf = 255.0 * perc;
-    let c = cf as u8;
-
-    let pixel = image::Rgb([c, c, c]);
-    imgbuf.put_pixel(i, i, pixel);
-  }*/
 
   let ref mut fout = File::create(&Path::new("output.png"))
     .unwrap();

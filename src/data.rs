@@ -1,36 +1,5 @@
 // Copyright (c) 2016 Brandon Thomas <bt@brand.io>, <echelon@gmail.com>
 
-// TODO(echelon): verify the struct fields are signed/unsigned correctly
-
-// Coordinate data
-// 33 - 34    X coord, signed 2's compliment, -32768, +32767
-// 35 - 36    Y coord, signed 2's compliment, -32768, +32767
-// 37 - 38    Z coord, signed 2's compliment, -32768, +32767
-// 39 - 40    Status code
-
-/*
-  Processing pipeline:
-
-    read(file) -> entries: Vec<IldaEntry> (which should be a direct in-memory mapping of the ILDA bytes)
-
-  Where IldaEntry = { RawHeader, Tc2d, Tc3d, I2d, I3d, Palette }
-
-  Then,
-
-        process_frames(entries) -> Vec<Frame>
-
-  Where Frame = { Frame2d, Frame3d }
-
-  And,
-
-    Frame2d {
-        points: Vec<Point2d>
-    }
-
-    Point2d { x, y, r, g, b }
-
-*/
-
 pub const HEADER_SIZE : usize = 32;
 pub const COLOR_PALETTE_SIZE: usize = 3;
 pub const INDEXED_2D_DATA_SIZE: usize = 6;
@@ -293,15 +262,9 @@ pub enum IldaEntry {
   IdxPoint2dEntry(IndexedPoint2d),
 }
 
-// TODO: DE-DUPLICATE
-// TODO/FIXME: Does Rust's casting use 2's complement? Do some maths.
-// TODO/FIXME: Reads in as little endian from big endian source.
-// Not cross-platform.
+// FIXME: 
+// Reads in as little endian from big endian source. Not cross-platform.
 fn read_i16(bytes: &[u8]) -> i16 {
   (((bytes[0] as u16) << 8) | (bytes[1] as u16)) as i16
 }
-
-/*fn read_u16(bytes: &[u8]) -> u16 {
-  ((bytes[0] as u16) << 8) | (bytes[1] as u16)
-}*/
 
