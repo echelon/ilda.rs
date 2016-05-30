@@ -3,6 +3,7 @@
 pub mod ilda {
   pub use idtf;
   pub use data;
+  pub use limit;
 }
 
 
@@ -40,4 +41,5 @@ pub mod idtf;
 pub mod data;
 pub mod reader;
 pub mod parser;
+pub mod limit;
 
