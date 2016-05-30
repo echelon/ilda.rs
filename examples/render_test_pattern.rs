@@ -15,13 +15,13 @@ pub fn main() {
   let result = read_file("./examples/ildatest.ild")
     .ok().unwrap();
 
-  println!("{:?}", result);
+  //println!("{:?}", result);
 
   let mut imgbuf = image::ImageBuffer::new(WIDTH, HEIGHT);
 
   for entry in result {
 
-    println!("Entry: {:?}", entry);
+    //println!("Entry: {:?}", entry);
 
     match entry {
       IldaEntry::IdxPoint3dEntry(pt) => {

@@ -115,7 +115,8 @@ pub struct IndexedPoint3d {
 
 impl IndexedPoint3d {
   /// Read multiple `IndexedPoint3d` from raw bytes.
-  pub fn read_bytes(bytes: &[u8]) -> Result<Vec<IndexedPoint3d>, ReadError> {
+  pub fn read_bytes(bytes: &[u8]) 
+      -> Result<Vec<IndexedPoint3d>, ReadError> {
     if bytes.len() % INDEXED_3D_DATA_SIZE != 0 {
       return Err(ReadError::WrongSize);
     }
@@ -123,13 +124,14 @@ impl IndexedPoint3d {
     let size = bytes.len() / INDEXED_3D_DATA_SIZE;
     let mut out = Vec::with_capacity(size);
 
-    for _ in 0..size {
+    for i in 0..size {
+      let j = i * INDEXED_3D_DATA_SIZE;
       out.push(IndexedPoint3d {
-        x: read_i16(&bytes[0..2]),
-        y: read_i16(&bytes[2..4]),
-        z: read_i16(&bytes[4..6]),
-        status_code: bytes[6] as i8,
-        color_index: bytes[7] as i8,
+        x: read_i16(&bytes[j .. j+2]),
+        y: read_i16(&bytes[j+2 .. j+4]),
+        z: read_i16(&bytes[j+4 .. j+6]),
+        status_code: bytes[j+6] as i8,
+        color_index: bytes[j+7] as i8,
       });
     }
 
@@ -148,7 +150,8 @@ pub struct IndexedPoint2d {
 
 impl IndexedPoint2d {
   /// Read multiple `IndexedPoint2d` from raw bytes.
-  pub fn read_bytes(bytes: &[u8]) -> Result<Vec<IndexedPoint2d>, ReadError> {
+  pub fn read_bytes(bytes: &[u8]) 
+      -> Result<Vec<IndexedPoint2d>, ReadError> {
     if bytes.len() % INDEXED_2D_DATA_SIZE != 0 {
       return Err(ReadError::WrongSize);
     }
@@ -156,12 +159,13 @@ impl IndexedPoint2d {
     let size = bytes.len() / INDEXED_2D_DATA_SIZE;
     let mut out = Vec::with_capacity(size);
 
-    for _ in 0..size {
+    for i in 0..size {
+      let j = i * INDEXED_2D_DATA_SIZE;
       out.push(IndexedPoint2d {
-        x: read_i16(&bytes[0..2]),
-        y: read_i16(&bytes[2..4]),
-        status_code: bytes[4] as i8,
-        color_index: bytes[5] as i8,
+        x: read_i16(&bytes[j .. j+2]),
+        y: read_i16(&bytes[j+2 .. j+4]),
+        status_code: bytes[j+4] as i8,
+        color_index: bytes[j+5] as i8,
       });
     }
 
@@ -187,11 +191,12 @@ impl ColorPalette {
     let size = bytes.len() / COLOR_PALETTE_SIZE;
     let mut out = Vec::with_capacity(size);
 
-    for _ in 0..size {
+    for i in 0..size {
+      let j = i * COLOR_PALETTE_SIZE;
       out.push(ColorPalette {
-        r: bytes[0],
-        g: bytes[1],
-        b: bytes[2],
+        r: bytes[j],
+        g: bytes[j+1],
+        b: bytes[j+2],
       });
     }
 
@@ -214,7 +219,8 @@ pub struct TrueColorPoint3d {
 
 impl TrueColorPoint3d {
   /// Read multiple `TrueColorPoint3d` from raw bytes.
-  pub fn read_bytes(bytes: &[u8]) -> Result<Vec<TrueColorPoint3d>, ReadError> {
+  pub fn read_bytes(bytes: &[u8]) 
+      -> Result<Vec<TrueColorPoint3d>, ReadError> {
     if bytes.len() % TRUE_COLOR_3D_DATA_SIZE != 0 {
       return Err(ReadError::WrongSize);
     }
@@ -222,12 +228,13 @@ impl TrueColorPoint3d {
     let size = bytes.len() / TRUE_COLOR_3D_DATA_SIZE;
     let mut out = Vec::with_capacity(size);
 
-    for _ in 0..size {
+    for i in 0..size {
+      let j = i * TRUE_COLOR_3D_DATA_SIZE;
       out.push(TrueColorPoint3d {
-        x: read_i16(&bytes[0..2]),
-        y: read_i16(&bytes[2..4]),
-        z: read_i16(&bytes[4..6]),
-        status_code: bytes[6] as i8,
+        x: read_i16(&bytes[j .. j+2]),
+        y: read_i16(&bytes[j+2 .. j+4]),
+        z: read_i16(&bytes[j+4 .. j+6]),
+        status_code: bytes[j+6] as i8,
         b: bytes[7],
         g: bytes[8],
         r: bytes[9],
@@ -251,7 +258,8 @@ pub struct TrueColorPoint2d {
 
 impl TrueColorPoint2d {
   /// Read multiple `TrueColorPoint2d` from raw bytes.
-  pub fn read_bytes(bytes: &[u8]) -> Result<Vec<TrueColorPoint2d>, ReadError> {
+  pub fn read_bytes(bytes: &[u8]) 
+      -> Result<Vec<TrueColorPoint2d>, ReadError> {
     if bytes.len() % TRUE_COLOR_2D_DATA_SIZE != 0 {
       return Err(ReadError::WrongSize);
     }
@@ -259,14 +267,15 @@ impl TrueColorPoint2d {
     let size = bytes.len() / TRUE_COLOR_2D_DATA_SIZE;
     let mut out = Vec::with_capacity(size);
 
-    for _ in 0..size {
+    for i in 0..size {
+      let j = i * TRUE_COLOR_2D_DATA_SIZE;
       out.push(TrueColorPoint2d {
-        x: read_i16(&bytes[0..2]),
-        y: read_i16(&bytes[2..4]),
-        status_code: bytes[4] as i8,
-        b: bytes[5],
-        g: bytes[6],
-        r: bytes[7],
+        x: read_i16(&bytes[j .. j+2]),
+        y: read_i16(&bytes[j+2 .. j+4]),
+        status_code: bytes[j+4] as i8,
+        b: bytes[j+5],
+        g: bytes[j+6],
+        r: bytes[j+7],
       });
     }
 

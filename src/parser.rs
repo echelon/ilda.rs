@@ -78,7 +78,9 @@ pub fn read_bytes(ilda_bytes: &[u8]) -> Result<Vec<IldaEntry>, Error> {
               Format::TrueColor3d => NextRead::Tc3d,
               Format::TrueColor2d => NextRead::Tc2d,
               Format::Unknown => {
-                return Err(Error::InvalidFile { reason: "Bad format.".to_string() });
+                return Err(Error::InvalidFile {
+                  reason: "Bad format.".to_string()
+                });
               },
             };
 
