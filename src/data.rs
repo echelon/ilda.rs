@@ -60,7 +60,7 @@ pub struct RawHeader {
   /// The first reserved portion of the ILDA header.
   pub reserved: u16,
 
-  /// The format, or type, of the header. 
+  /// The format, or type, of the header.
   pub format_code: u8,
 
   /// The name of the frame or color palette.
@@ -73,7 +73,7 @@ pub struct RawHeader {
   /// If 0, this is the EOF header.
   pub record_count: u16,
 
-  /// If the frame is part of an animation, this is the frame number 
+  /// If the frame is part of an animation, this is the frame number
   /// within the animation sequence. If this is a color palette header,
   /// it's the palette number.
   pub number: u16,
@@ -115,7 +115,7 @@ pub struct IndexedPoint3d {
 
 impl IndexedPoint3d {
   /// Read multiple `IndexedPoint3d` from raw bytes.
-  pub fn read_bytes(bytes: &[u8]) 
+  pub fn read_bytes(bytes: &[u8])
       -> Result<Vec<IndexedPoint3d>, ReadError> {
     if bytes.len() % INDEXED_3D_DATA_SIZE != 0 {
       return Err(ReadError::WrongSize);
@@ -150,7 +150,7 @@ pub struct IndexedPoint2d {
 
 impl IndexedPoint2d {
   /// Read multiple `IndexedPoint2d` from raw bytes.
-  pub fn read_bytes(bytes: &[u8]) 
+  pub fn read_bytes(bytes: &[u8])
       -> Result<Vec<IndexedPoint2d>, ReadError> {
     if bytes.len() % INDEXED_2D_DATA_SIZE != 0 {
       return Err(ReadError::WrongSize);
@@ -219,7 +219,7 @@ pub struct TrueColorPoint3d {
 
 impl TrueColorPoint3d {
   /// Read multiple `TrueColorPoint3d` from raw bytes.
-  pub fn read_bytes(bytes: &[u8]) 
+  pub fn read_bytes(bytes: &[u8])
       -> Result<Vec<TrueColorPoint3d>, ReadError> {
     if bytes.len() % TRUE_COLOR_3D_DATA_SIZE != 0 {
       return Err(ReadError::WrongSize);
@@ -258,7 +258,7 @@ pub struct TrueColorPoint2d {
 
 impl TrueColorPoint2d {
   /// Read multiple `TrueColorPoint2d` from raw bytes.
-  pub fn read_bytes(bytes: &[u8]) 
+  pub fn read_bytes(bytes: &[u8])
       -> Result<Vec<TrueColorPoint2d>, ReadError> {
     if bytes.len() % TRUE_COLOR_2D_DATA_SIZE != 0 {
       return Err(ReadError::WrongSize);
@@ -295,13 +295,13 @@ pub enum IldaEntry {
 
 // TODO: DE-DUPLICATE
 // TODO/FIXME: Does Rust's casting use 2's complement? Do some maths.
+// TODO/FIXME: Reads in as little endian from big endian source.
+// Not cross-platform.
 fn read_i16(bytes: &[u8]) -> i16 {
-  (((u8::from_be(bytes[0]) as u16) << 8) 
-   | (u8::from_be(bytes[1]) as u16)) as i16
+  (((bytes[0] as u16) << 8) | (bytes[1] as u16)) as i16
 }
 
-fn read_u16(bytes: &[u8]) -> u16 {
-  ((u8::from_be(bytes[0]) as u16) << 8) 
-    | (u8::from_be(bytes[1]) as u16)
-}
+/*fn read_u16(bytes: &[u8]) -> u16 {
+  ((bytes[0] as u16) << 8) | (bytes[1] as u16)
+}*/
 
