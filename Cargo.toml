@@ -7,6 +7,7 @@
   license = "BSD-4-Clause"
   readme = "README.md"
   repository = "https://github.com/echelon/ilda.rs"
+  documentation = "https://docs.rs/ilda"
 
 [lib]
   name = "ilda"
