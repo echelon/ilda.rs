@@ -14,44 +14,24 @@ use data::TRUE_COLOR_2D_DATA_SIZE;
 use data::TRUE_COLOR_3D_DATA_SIZE;
 use data::TrueColorPoint2d;
 use data::TrueColorPoint3d;
+use error::IldaError;
 use std::fs::File;
 use std::io::Read;
 
-// "ILDA" in ASCII.
+/// The ILDA format header; "ILDA" in ASCII.
 const ILDA_HEADER : [u8; 4] = [73u8, 76u8, 68u8, 65u8];
 
-// TODO: Revise errors.
-pub enum Error {
-  FileReadError,
-  InvalidFile{reason: String},
-  InvalidFormat,
-  Unimplemented, // TODO TEMP
-}
-
-pub fn read_file(filename: &str) -> Result<Vec<IldaEntry>, Error> {
+pub fn read_file(filename: &str) -> Result<Vec<IldaEntry>, IldaError> {
   let mut contents = Vec::new();
-
-  match File::open(filename) {
-    Err(_) => {
-      return Err(Error::FileReadError);
-    },
-    Ok(mut file) => {
-      match file.read_to_end(&mut contents) {
-        Err(_) => {
-          return Err(Error::FileReadError);
-        },
-        Ok(_) => {},
-      }
-    }
-  }
-
+  let mut file = File::open(filename)?;
+  let _r = file.read_to_end(&mut contents);
   read_bytes(&contents[..])
 }
 
 /// Read ILDA data from raw bytes.
-pub fn read_bytes(ilda_bytes: &[u8]) -> Result<Vec<IldaEntry>, Error> {
+pub fn read_bytes(ilda_bytes: &[u8]) -> Result<Vec<IldaEntry>, IldaError> {
   if ilda_bytes.len() < 32 {
-    return Err(Error::InvalidFile {
+    return Err(IldaError::InvalidFile {
       reason: "File too short.".to_string()
     });
   }
@@ -79,7 +59,7 @@ pub fn read_bytes(ilda_bytes: &[u8]) -> Result<Vec<IldaEntry>, Error> {
               Format::TrueColor3d => NextRead::Tc3d,
               Format::TrueColor2d => NextRead::Tc2d,
               Format::Unknown => {
-                return Err(Error::InvalidFile {
+                return Err(IldaError::InvalidFile {
                   reason: "Bad format.".to_string()
                 });
               },
@@ -95,7 +75,7 @@ pub fn read_bytes(ilda_bytes: &[u8]) -> Result<Vec<IldaEntry>, Error> {
         let end = INDEXED_3D_DATA_SIZE * frames_to_read as usize;
         match IndexedPoint3d::read_bytes(&ilda_bytes[i .. i + end]) {
           Err(err) => {
-            return Err(Error::InvalidFormat); // TODO: Better error
+            return Err(IldaError::InvalidFormat); // TODO: Better error
           },
           Ok(mut points) => {
             let mut entries = points.iter()
@@ -111,7 +91,7 @@ pub fn read_bytes(ilda_bytes: &[u8]) -> Result<Vec<IldaEntry>, Error> {
         let end = INDEXED_2D_DATA_SIZE * frames_to_read as usize;
         match IndexedPoint2d::read_bytes(&ilda_bytes[i .. i + end]) {
           Err(err) => {
-            return Err(Error::InvalidFormat); // TODO: Better error
+            return Err(IldaError::InvalidFormat); // TODO: Better error
           },
           Ok(mut points) => {
             let mut entries = points.iter()
@@ -127,7 +107,7 @@ pub fn read_bytes(ilda_bytes: &[u8]) -> Result<Vec<IldaEntry>, Error> {
         let end = COLOR_PALETTE_SIZE * frames_to_read as usize;
         match ColorPalette::read_bytes(&ilda_bytes[i .. i + end]) {
           Err(err) => {
-            return Err(Error::InvalidFormat); // TODO: Better error
+            return Err(IldaError::InvalidFormat); // TODO: Better error
           },
           Ok(mut points) => {
             let mut entries = points.iter()
@@ -143,7 +123,7 @@ pub fn read_bytes(ilda_bytes: &[u8]) -> Result<Vec<IldaEntry>, Error> {
         let end = TRUE_COLOR_3D_DATA_SIZE * frames_to_read as usize;
         match TrueColorPoint3d::read_bytes(&ilda_bytes[i .. i + end]) {
           Err(err) => {
-            return Err(Error::InvalidFormat); // TODO: Better error
+            return Err(IldaError::InvalidFormat); // TODO: Better error
           },
           Ok(mut points) => {
             let mut entries = points.iter()
@@ -159,7 +139,7 @@ pub fn read_bytes(ilda_bytes: &[u8]) -> Result<Vec<IldaEntry>, Error> {
         let end = TRUE_COLOR_2D_DATA_SIZE * frames_to_read as usize;
         match TrueColorPoint2d::read_bytes(&ilda_bytes[i .. i + end]) {
           Err(err) => {
-            return Err(Error::InvalidFormat); // TODO: Better error
+            return Err(IldaError::InvalidFormat); // TODO: Better error
           },
           Ok(mut points) => {
             let mut entries = points.iter()
@@ -177,10 +157,10 @@ pub fn read_bytes(ilda_bytes: &[u8]) -> Result<Vec<IldaEntry>, Error> {
   Ok(vec)
 }
 
-fn read_header(header_bytes: &[u8]) -> Result<RawHeader, Error> {
+fn read_header(header_bytes: &[u8]) -> Result<RawHeader, IldaError> {
   if header_bytes.len() != 32
       || &header_bytes[0..4] != &ILDA_HEADER {
-    return Err(Error::InvalidFormat);
+    return Err(IldaError::InvalidFormat);
   }
 
   let name              = read_name(&header_bytes[8..16]);
