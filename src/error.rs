@@ -9,14 +9,19 @@ use std::io;
 /// Ilda library errors.
 #[derive(Debug)]
 pub enum IldaError {
+  /// Error reading the ILDA file due to ILDA byte format errors. The file may
+  /// deviate from the standard or use features the library cannot handle.
+  FormatError,
   InvalidFile { reason: String },
   InvalidFormat,
+  /// Wraps standard library IO errors.
   IoError { cause: io::Error },
 }
 
 impl Error for IldaError {
   fn description(&self) -> &str {
     match *self {
+      IldaError::FormatError => "FormatError",
       IldaError::InvalidFile { .. } => "InvalidFile",
       IldaError::InvalidFormat => "InvalidFormat",
       IldaError::IoError { .. } => "IoError",
@@ -27,6 +32,7 @@ impl Error for IldaError {
 impl Display for IldaError {
   fn fmt(&self, f: &mut Formatter) -> Result {
     let description = match *self {
+      IldaError::FormatError => "FormatError",
       IldaError::InvalidFile { .. } => "InvalidFile",
       IldaError::InvalidFormat => "InvalidFormat",
       IldaError::IoError { .. } => "IoError",
