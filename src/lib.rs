@@ -37,8 +37,11 @@ pub enum Format {
   TrueColor2d, // 5
 }
 
-pub mod idtf;
-pub mod data;
-pub mod parser;
-pub mod limit;
+mod error;
 
+pub mod data;
+pub mod idtf;
+pub mod limit;
+pub mod parser;
+
+pub use error::IldaError;

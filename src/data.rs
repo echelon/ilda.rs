@@ -1,16 +1,13 @@
 // Copyright (c) 2016 Brandon Thomas <bt@brand.io>, <echelon@gmail.com>
 
+use error::IldaError;
+
 pub const HEADER_SIZE : usize = 32;
 pub const COLOR_PALETTE_SIZE: usize = 3;
 pub const INDEXED_2D_DATA_SIZE: usize = 6;
 pub const INDEXED_3D_DATA_SIZE: usize = 8;
 pub const TRUE_COLOR_2D_DATA_SIZE: usize = 8;
 pub const TRUE_COLOR_3D_DATA_SIZE: usize = 10;
-
-pub enum ReadError {
-  /// The wrong number of bytes has been supplied for reading.
-  WrongSize,
-}
 
 /// The payload encoding formats currently supported.
 pub enum Format {
@@ -85,9 +82,9 @@ pub struct IndexedPoint3d {
 impl IndexedPoint3d {
   /// Read multiple `IndexedPoint3d` from raw bytes.
   pub fn read_bytes(bytes: &[u8])
-      -> Result<Vec<IndexedPoint3d>, ReadError> {
+      -> Result<Vec<IndexedPoint3d>, IldaError> {
     if bytes.len() % INDEXED_3D_DATA_SIZE != 0 {
-      return Err(ReadError::WrongSize);
+      return Err(IldaError::InvalidData);
     }
 
     let size = bytes.len() / INDEXED_3D_DATA_SIZE;
@@ -120,9 +117,9 @@ pub struct IndexedPoint2d {
 impl IndexedPoint2d {
   /// Read multiple `IndexedPoint2d` from raw bytes.
   pub fn read_bytes(bytes: &[u8])
-      -> Result<Vec<IndexedPoint2d>, ReadError> {
+      -> Result<Vec<IndexedPoint2d>, IldaError> {
     if bytes.len() % INDEXED_2D_DATA_SIZE != 0 {
-      return Err(ReadError::WrongSize);
+      return Err(IldaError::InvalidData);
     }
 
     let size = bytes.len() / INDEXED_2D_DATA_SIZE;
@@ -152,9 +149,9 @@ pub struct ColorPalette {
 
 impl ColorPalette {
   /// Read multiple `ColorPalette` from raw bytes.
-  pub fn read_bytes(bytes: &[u8]) -> Result<Vec<ColorPalette>, ReadError> {
+  pub fn read_bytes(bytes: &[u8]) -> Result<Vec<ColorPalette>, IldaError> {
     if bytes.len() % COLOR_PALETTE_SIZE != 0 {
-      return Err(ReadError::WrongSize);
+      return Err(IldaError::InvalidData);
     }
 
     let size = bytes.len() / COLOR_PALETTE_SIZE;
@@ -189,9 +186,9 @@ pub struct TrueColorPoint3d {
 impl TrueColorPoint3d {
   /// Read multiple `TrueColorPoint3d` from raw bytes.
   pub fn read_bytes(bytes: &[u8])
-      -> Result<Vec<TrueColorPoint3d>, ReadError> {
+      -> Result<Vec<TrueColorPoint3d>, IldaError> {
     if bytes.len() % TRUE_COLOR_3D_DATA_SIZE != 0 {
-      return Err(ReadError::WrongSize);
+      return Err(IldaError::InvalidData);
     }
 
     let size = bytes.len() / TRUE_COLOR_3D_DATA_SIZE;
@@ -228,9 +225,9 @@ pub struct TrueColorPoint2d {
 impl TrueColorPoint2d {
   /// Read multiple `TrueColorPoint2d` from raw bytes.
   pub fn read_bytes(bytes: &[u8])
-      -> Result<Vec<TrueColorPoint2d>, ReadError> {
+      -> Result<Vec<TrueColorPoint2d>, IldaError> {
     if bytes.len() % TRUE_COLOR_2D_DATA_SIZE != 0 {
-      return Err(ReadError::WrongSize);
+      return Err(IldaError::InvalidData);
     }
 
     let size = bytes.len() / TRUE_COLOR_2D_DATA_SIZE;
