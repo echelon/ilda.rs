@@ -9,11 +9,16 @@ use std::io;
 /// Ilda library errors.
 #[derive(Debug)]
 pub enum IldaError {
-  /// Error reading the ILDA file due to ILDA byte format errors. The file may
-  /// deviate from the standard or use features the library cannot handle.
-  FormatError,
-  InvalidFile { reason: String },
-  InvalidFormat,
+  /// The ILDA file is too small to read.
+  FileTooSmall,
+
+  /// Problems were encountered while reading the ILDA data.
+  InvalidData,
+
+  /// Problems were encountered while reading the ILDA data, specifically with
+  /// an invalid ILDA header section.
+  InvalidHeader,
+
   /// Wraps standard library IO errors.
   IoError { cause: io::Error },
 }
@@ -21,9 +26,9 @@ pub enum IldaError {
 impl Error for IldaError {
   fn description(&self) -> &str {
     match *self {
-      IldaError::FormatError => "FormatError",
-      IldaError::InvalidFile { .. } => "InvalidFile",
-      IldaError::InvalidFormat => "InvalidFormat",
+      IldaError::FileTooSmall => "FileTooSmall",
+      IldaError::InvalidData => "InvalidData",
+      IldaError::InvalidHeader => "InvalidHeader",
       IldaError::IoError { .. } => "IoError",
     }
   }
@@ -32,9 +37,9 @@ impl Error for IldaError {
 impl Display for IldaError {
   fn fmt(&self, f: &mut Formatter) -> Result {
     let description = match *self {
-      IldaError::FormatError => "FormatError",
-      IldaError::InvalidFile { .. } => "InvalidFile",
-      IldaError::InvalidFormat => "InvalidFormat",
+      IldaError::FileTooSmall => "FileTooSmall",
+      IldaError::InvalidData => "InvalidData",
+      IldaError::InvalidHeader => "InvalidHeader",
       IldaError::IoError { .. } => "IoError",
     };
     write!(f, "{}", description)

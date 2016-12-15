@@ -84,7 +84,7 @@ impl IndexedPoint3d {
   pub fn read_bytes(bytes: &[u8])
       -> Result<Vec<IndexedPoint3d>, IldaError> {
     if bytes.len() % INDEXED_3D_DATA_SIZE != 0 {
-      return Err(IldaError::FormatError);
+      return Err(IldaError::InvalidData);
     }
 
     let size = bytes.len() / INDEXED_3D_DATA_SIZE;
@@ -119,7 +119,7 @@ impl IndexedPoint2d {
   pub fn read_bytes(bytes: &[u8])
       -> Result<Vec<IndexedPoint2d>, IldaError> {
     if bytes.len() % INDEXED_2D_DATA_SIZE != 0 {
-      return Err(IldaError::FormatError);
+      return Err(IldaError::InvalidData);
     }
 
     let size = bytes.len() / INDEXED_2D_DATA_SIZE;
@@ -151,7 +151,7 @@ impl ColorPalette {
   /// Read multiple `ColorPalette` from raw bytes.
   pub fn read_bytes(bytes: &[u8]) -> Result<Vec<ColorPalette>, IldaError> {
     if bytes.len() % COLOR_PALETTE_SIZE != 0 {
-      return Err(IldaError::FormatError);
+      return Err(IldaError::InvalidData);
     }
 
     let size = bytes.len() / COLOR_PALETTE_SIZE;
@@ -188,7 +188,7 @@ impl TrueColorPoint3d {
   pub fn read_bytes(bytes: &[u8])
       -> Result<Vec<TrueColorPoint3d>, IldaError> {
     if bytes.len() % TRUE_COLOR_3D_DATA_SIZE != 0 {
-      return Err(IldaError::FormatError);
+      return Err(IldaError::InvalidData);
     }
 
     let size = bytes.len() / TRUE_COLOR_3D_DATA_SIZE;
@@ -227,7 +227,7 @@ impl TrueColorPoint2d {
   pub fn read_bytes(bytes: &[u8])
       -> Result<Vec<TrueColorPoint2d>, IldaError> {
     if bytes.len() % TRUE_COLOR_2D_DATA_SIZE != 0 {
-      return Err(IldaError::FormatError);
+      return Err(IldaError::InvalidData);
     }
 
     let size = bytes.len() / TRUE_COLOR_2D_DATA_SIZE;

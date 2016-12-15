@@ -1,12 +1,5 @@
 // Copyright (c) 2015 Brandon Thomas <bt@brand.io>
 
-use data::RawHeader;
-use data::IndexedPoint2d;
-use data::IndexedPoint3d;
-use data::TrueColorPoint2d;
-use data::TrueColorPoint3d;
-use data::ColorPalette;
-
 /// A point with an asigned RGB color.
 #[derive(Debug)]
 pub struct TrueColorPoint {

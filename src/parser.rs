@@ -1,5 +1,6 @@
 // Copyright (c) 2015-2016 Brandon Thomas <bt@brand.io>
 
+
 use data::COLOR_PALETTE_SIZE;
 use data::ColorPalette;
 use data::Format;
@@ -31,9 +32,7 @@ pub fn read_file(filename: &str) -> Result<Vec<IldaEntry>, IldaError> {
 /// Read ILDA data from raw bytes.
 pub fn read_bytes(ilda_bytes: &[u8]) -> Result<Vec<IldaEntry>, IldaError> {
   if ilda_bytes.len() < 32 {
-    return Err(IldaError::InvalidFile {
-      reason: "File too short.".to_string()
-    });
+    return Err(IldaError::FileTooSmall);
   }
 
   enum NextRead { Header, I3d, I2d, Color, Tc3d, Tc2d };
@@ -47,107 +46,67 @@ pub fn read_bytes(ilda_bytes: &[u8]) -> Result<Vec<IldaEntry>, IldaError> {
   while i < ilda_bytes.len() {
     match next_read {
       NextRead::Header => {
-        match read_header(&ilda_bytes[i .. i + HEADER_SIZE]) {
-          Err(err) => {
-            return Err(err);
-          },
-          Ok(mut header) => {
-            next_read = match header.get_format() {
-              Format::Indexed3d => NextRead::I3d,
-              Format::Indexed2d => NextRead::I2d,
-              Format::ColorPalette => NextRead::Color,
-              Format::TrueColor3d => NextRead::Tc3d,
-              Format::TrueColor2d => NextRead::Tc2d,
-              Format::Unknown => {
-                return Err(IldaError::InvalidFile {
-                  reason: "Bad format.".to_string()
-                });
-              },
-            };
-
-            frames_to_read = header.record_count;
-            vec.push(IldaEntry::HeaderEntry(header));
-            i += HEADER_SIZE;
-          },
+        let header = read_header(&ilda_bytes[i .. i + HEADER_SIZE])
+            .map_err(|_| IldaError::InvalidHeader)?;
+        next_read = match header.get_format() {
+          Format::Indexed3d => NextRead::I3d,
+          Format::Indexed2d => NextRead::I2d,
+          Format::ColorPalette => NextRead::Color,
+          Format::TrueColor3d => NextRead::Tc3d,
+          Format::TrueColor2d => NextRead::Tc2d,
+          Format::Unknown => return Err(IldaError::InvalidHeader),
         };
+        frames_to_read = header.record_count;
+        vec.push(IldaEntry::HeaderEntry(header));
+        i += HEADER_SIZE;
       },
       NextRead::I3d => {
         let end = INDEXED_3D_DATA_SIZE * frames_to_read as usize;
-        match IndexedPoint3d::read_bytes(&ilda_bytes[i .. i + end]) {
-          Err(err) => {
-            return Err(IldaError::InvalidFormat); // TODO: Better error
-          },
-          Ok(mut points) => {
-            let mut entries = points.iter()
-              .map(|x| IldaEntry::IdxPoint3dEntry(x.clone()))
-              .collect();
-            vec.append(&mut entries);
-          },
-        }
+        let points = IndexedPoint3d::read_bytes(&ilda_bytes[i .. i + end])?;
+        let mut entries = points.iter()
+          .map(|x| IldaEntry::IdxPoint3dEntry(x.clone()))
+          .collect();
+        vec.append(&mut entries);
         next_read = NextRead::Header;
         i += end;
       },
       NextRead::I2d => {
         let end = INDEXED_2D_DATA_SIZE * frames_to_read as usize;
-        match IndexedPoint2d::read_bytes(&ilda_bytes[i .. i + end]) {
-          Err(err) => {
-            return Err(IldaError::InvalidFormat); // TODO: Better error
-          },
-          Ok(mut points) => {
-            let mut entries = points.iter()
-              .map(|x| IldaEntry::IdxPoint2dEntry(x.clone()))
-              .collect();
-            vec.append(&mut entries);
-          },
-        }
+        let points = IndexedPoint2d::read_bytes(&ilda_bytes[i .. i + end])?;
+        let mut entries = points.iter()
+          .map(|x| IldaEntry::IdxPoint2dEntry(x.clone()))
+          .collect();
+        vec.append(&mut entries);
         next_read = NextRead::Header;
         i += end;
       },
       NextRead::Color => {
         let end = COLOR_PALETTE_SIZE * frames_to_read as usize;
-        match ColorPalette::read_bytes(&ilda_bytes[i .. i + end]) {
-          Err(err) => {
-            return Err(IldaError::InvalidFormat); // TODO: Better error
-          },
-          Ok(mut points) => {
-            let mut entries = points.iter()
-              .map(|x| IldaEntry::ColorPaletteEntry(x.clone()))
-              .collect();
-            vec.append(&mut entries);
-          },
-        }
+        let points = ColorPalette::read_bytes(&ilda_bytes[i .. i + end])?;
+        let mut entries = points.iter()
+          .map(|x| IldaEntry::ColorPaletteEntry(x.clone()))
+          .collect();
+        vec.append(&mut entries);
         next_read = NextRead::Header;
         i += end;
       },
       NextRead::Tc3d => {
         let end = TRUE_COLOR_3D_DATA_SIZE * frames_to_read as usize;
-        match TrueColorPoint3d::read_bytes(&ilda_bytes[i .. i + end]) {
-          Err(err) => {
-            return Err(IldaError::InvalidFormat); // TODO: Better error
-          },
-          Ok(mut points) => {
-            let mut entries = points.iter()
-              .map(|x| IldaEntry::TcPoint3dEntry(x.clone()))
-              .collect();
-            vec.append(&mut entries);
-          },
-        }
+        let points = TrueColorPoint3d::read_bytes(&ilda_bytes[i .. i + end])?;
+        let mut entries = points.iter()
+          .map(|x| IldaEntry::TcPoint3dEntry(x.clone()))
+          .collect();
+        vec.append(&mut entries);
         next_read = NextRead::Header;
         i += end;
       },
       NextRead::Tc2d => {
         let end = TRUE_COLOR_2D_DATA_SIZE * frames_to_read as usize;
-        match TrueColorPoint2d::read_bytes(&ilda_bytes[i .. i + end]) {
-          Err(err) => {
-            return Err(IldaError::InvalidFormat); // TODO: Better error
-          },
-          Ok(mut points) => {
-            let mut entries = points.iter()
-              .map(|x| IldaEntry::TcPoint2dEntry(x.clone()))
-              .collect();
-            vec.append(&mut entries);
-          },
-        }
+        let points = TrueColorPoint2d::read_bytes(&ilda_bytes[i .. i + end])?;
+        let mut entries = points.iter()
+          .map(|x| IldaEntry::TcPoint2dEntry(x.clone()))
+          .collect();
+        vec.append(&mut entries);
         next_read = NextRead::Header;
         i += end;
       },
@@ -160,7 +119,7 @@ pub fn read_bytes(ilda_bytes: &[u8]) -> Result<Vec<IldaEntry>, IldaError> {
 fn read_header(header_bytes: &[u8]) -> Result<RawHeader, IldaError> {
   if header_bytes.len() != 32
       || &header_bytes[0..4] != &ILDA_HEADER {
-    return Err(IldaError::InvalidFormat);
+    return Err(IldaError::InvalidHeader);
   }
 
   let name              = read_name(&header_bytes[8..16]);
