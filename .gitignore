@@ -1,4 +1,6 @@
+*.iml
 *~
+.idea/
 Cargo.lock
 TODO.md
 ilda_files/
