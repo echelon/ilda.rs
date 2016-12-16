@@ -142,3 +142,51 @@ impl Frame {
     self.points.get(position)
   }
 }
+
+pub struct FrameIterator<'a> {
+  animation: &'a Animation,
+  index: usize,
+}
+
+pub struct PointIterator<'a> {
+  frame: &'a Frame,
+  index: usize,
+}
+
+impl <'a> IntoIterator for &'a Animation {
+  type IntoIter = FrameIterator<'a>;
+  type Item = &'a Frame;
+
+  fn into_iter(self) -> Self::IntoIter {
+    FrameIterator { animation: self, index: 0 }
+  }
+}
+
+impl<'a> IntoIterator for &'a Frame {
+  type IntoIter = PointIterator<'a>;
+  type Item = &'a Point;
+
+  fn into_iter(self) -> Self::IntoIter {
+    PointIterator { frame: self, index: 0 }
+  }
+}
+
+impl<'a> Iterator for FrameIterator<'a> {
+  type Item = &'a Frame;
+
+  fn next(&mut self) -> Option<Self::Item> {
+    let item = self.animation.get_frame(self.index);
+    self.index += 1;
+    item
+  }
+}
+
+impl<'a> Iterator for PointIterator<'a> {
+  type Item = &'a Point;
+
+  fn next(&mut self) -> Option<Self::Item> {
+    let item = self.frame.get_point(self.index);
+    self.index += 1;
+    item
+  }
+}
