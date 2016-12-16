@@ -1,5 +1,7 @@
 // Copyright (c) 2015 Brandon Thomas <bt@brand.io>
 
+// TODO: None of this seems to be in use.
+
 /// A point with an asigned RGB color.
 #[derive(Debug)]
 pub struct TrueColorPoint {
@@ -14,7 +16,6 @@ pub struct TrueColorPoint {
   pub g: u8,
   pub b: u8,
 }
-
 
 /// A point with a color palette lookup index.
 #[derive(Debug)]

@@ -21,6 +21,12 @@ pub enum IldaError {
 
   /// Wraps standard library IO errors.
   IoError { cause: io::Error },
+
+  /// No data in the file, or nothing could be parsed.
+  NoData,
+
+  /// Not yet supported.
+  Unsupported
 }
 
 impl Error for IldaError {
@@ -30,19 +36,15 @@ impl Error for IldaError {
       IldaError::InvalidData => "InvalidData",
       IldaError::InvalidHeader => "InvalidHeader",
       IldaError::IoError { .. } => "IoError",
+      IldaError::NoData => "NoData",
+      IldaError::Unsupported => "Unsupported",
     }
   }
 }
 
 impl Display for IldaError {
   fn fmt(&self, f: &mut Formatter) -> Result {
-    let description = match *self {
-      IldaError::FileTooSmall => "FileTooSmall",
-      IldaError::InvalidData => "InvalidData",
-      IldaError::InvalidHeader => "InvalidHeader",
-      IldaError::IoError { .. } => "IoError",
-    };
-    write!(f, "{}", description)
+    write!(f, "{}", self.description())
   }
 }
 

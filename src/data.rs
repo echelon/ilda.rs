@@ -19,10 +19,9 @@ pub enum Format {
   TrueColor3d,
 }
 
-// TODO: Name `Header`
 /// A Raw ILDA header.
 #[derive(Clone, Debug)]
-pub struct RawHeader {
+pub struct Header {
   /// The first reserved portion of the ILDA header.
   pub reserved: u16,
 
@@ -55,7 +54,7 @@ pub struct RawHeader {
   pub reserved_2: u8,
 }
 
-impl RawHeader {
+impl Header {
   /// Returns the format of the header.
   pub fn get_format(&self) -> Format {
     match self.format_code {
@@ -251,7 +250,7 @@ impl TrueColorPoint2d {
 
 #[derive(Clone, Debug)]
 pub enum IldaEntry {
-  HeaderEntry(RawHeader),
+  HeaderEntry(Header),
   TcPoint3dEntry(TrueColorPoint3d),
   TcPoint2dEntry(TrueColorPoint2d),
   ColorPaletteEntry(ColorPalette),

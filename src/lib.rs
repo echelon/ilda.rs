@@ -1,9 +1,18 @@
 // Copyright (c) 2015 Brandon Thomas <bt@brand.io>
 
+/*
+TODO
+
+ - "idtf" reads raw stream of headers, byte payloads, etc.
+ - "abstract" reads data into abstract "frame" and "color"
+ - There's a lot of dead code here.
+*/
+
 pub mod ilda {
   pub use idtf;
   pub use data;
   pub use limit;
+  pub use animation;
 }
 
 
@@ -43,5 +52,6 @@ pub mod data;
 pub mod idtf;
 pub mod limit;
 pub mod parser;
+pub mod animation;
 
 pub use error::IldaError;

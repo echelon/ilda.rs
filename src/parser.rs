@@ -1,16 +1,15 @@
 // Copyright (c) 2015-2016 Brandon Thomas <bt@brand.io>
 
-
 use data::COLOR_PALETTE_SIZE;
 use data::ColorPalette;
 use data::Format;
 use data::HEADER_SIZE;
+use data::Header;
 use data::INDEXED_2D_DATA_SIZE;
 use data::INDEXED_3D_DATA_SIZE;
 use data::IldaEntry;
 use data::IndexedPoint2d;
 use data::IndexedPoint3d;
-use data::RawHeader;
 use data::TRUE_COLOR_2D_DATA_SIZE;
 use data::TRUE_COLOR_3D_DATA_SIZE;
 use data::TrueColorPoint2d;
@@ -22,6 +21,7 @@ use std::io::Read;
 /// The ILDA format header; "ILDA" in ASCII.
 const ILDA_HEADER : [u8; 4] = [73u8, 76u8, 68u8, 65u8];
 
+/// Read ILDA data from a file.
 pub fn read_file(filename: &str) -> Result<Vec<IldaEntry>, IldaError> {
   let mut contents = Vec::new();
   let mut file = File::open(filename)?;
@@ -116,7 +116,7 @@ pub fn read_bytes(ilda_bytes: &[u8]) -> Result<Vec<IldaEntry>, IldaError> {
   Ok(vec)
 }
 
-fn read_header(header_bytes: &[u8]) -> Result<RawHeader, IldaError> {
+fn read_header(header_bytes: &[u8]) -> Result<Header, IldaError> {
   if header_bytes.len() != 32
       || &header_bytes[0..4] != &ILDA_HEADER {
     return Err(IldaError::InvalidHeader);
@@ -129,7 +129,7 @@ fn read_header(header_bytes: &[u8]) -> Result<RawHeader, IldaError> {
   let total_frames      = read_u16(&header_bytes[28..30]);
   let projector_number  = header_bytes[31];
 
-  Ok(RawHeader {
+  Ok(Header {
     reserved: 0, // TODO: Read in.
     format_code: header_bytes[7],
     name: name,
@@ -205,4 +205,3 @@ mod tests {
     assert_eq!(read_u16(&[255u8, 255u8]), 65535u16);
   }
 }
-
