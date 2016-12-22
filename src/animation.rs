@@ -110,6 +110,22 @@ impl Animation {
     })
   }
 
+  /// Get an frame iterator for the animation.
+  pub fn into_frame_iter<'a>(&'a self) -> AnimationFrameIterator<'a> {
+    AnimationFrameIterator { animation: self, index: 0 }
+  }
+
+  /// Get a point iterator for the animation, which will iterate over all points
+  /// from all frames.
+  pub fn into_point_iter<'a>(&'a self) -> AnimationPointIterator<'a> {
+    AnimationPointIterator {
+      animation: self,
+      current_frame: self.frames.get(0),
+      frame_index: 0,
+      point_index: 0,
+    }
+  }
+
   /// Return a reference to the frames.
   pub fn get_frames(&self) -> &Vec<Frame> {
     &self.frames
@@ -143,35 +159,62 @@ impl Frame {
   }
 }
 
-pub struct FrameIterator<'a> {
+/// Iterate over frames in the animation.
+pub struct AnimationFrameIterator<'a> {
   animation: &'a Animation,
   index: usize,
 }
 
-pub struct PointIterator<'a> {
+/// Iterate over all the points from all of the frames in the animation.
+pub struct AnimationPointIterator<'a> {
+  animation: &'a Animation,
+  current_frame: Option<&'a Frame>, // Iteration ends when None.
+  frame_index: usize,
+  point_index: usize,
+}
+
+impl <'a> AnimationPointIterator<'a> {
+  // Get the next point for the current frame and advance pointer.
+  fn next_point_for_frame(&mut self) -> Option<&'a Point> {
+    match self.current_frame {
+      None => return None, // Iteration has ended
+      Some(frame) => {
+        match frame.get_point(self.point_index) {
+          Some(point) => {
+            self.point_index += 1;
+            Some(point)
+          },
+          None => None,
+        }
+      },
+    }
+  }
+
+  // Get the next frame and advance pointer.
+  fn next_frame(&mut self) -> Option<&'a Frame> {
+    self.frame_index += 1;
+    self.point_index = 0;
+    self.current_frame = self.animation.get_frame(self.frame_index);
+    self.current_frame
+  }
+}
+
+pub struct FramePointIterator<'a> {
   frame: &'a Frame,
   index: usize,
 }
 
-impl <'a> IntoIterator for &'a Animation {
-  type IntoIter = FrameIterator<'a>;
-  type Item = &'a Frame;
-
-  fn into_iter(self) -> Self::IntoIter {
-    FrameIterator { animation: self, index: 0 }
-  }
-}
 
 impl<'a> IntoIterator for &'a Frame {
-  type IntoIter = PointIterator<'a>;
+  type IntoIter = FramePointIterator<'a>;
   type Item = &'a Point;
 
   fn into_iter(self) -> Self::IntoIter {
-    PointIterator { frame: self, index: 0 }
+    FramePointIterator { frame: self, index: 0 }
   }
 }
 
-impl<'a> Iterator for FrameIterator<'a> {
+impl<'a> Iterator for AnimationFrameIterator<'a> {
   type Item = &'a Frame;
 
   fn next(&mut self) -> Option<Self::Item> {
@@ -181,7 +224,18 @@ impl<'a> Iterator for FrameIterator<'a> {
   }
 }
 
-impl<'a> Iterator for PointIterator<'a> {
+impl<'a> Iterator for AnimationPointIterator<'a> {
+  type Item = &'a Point;
+
+  fn next(&mut self) -> Option<Self::Item> {
+    self.next_point_for_frame().or_else(|| {
+      self.next_frame();
+      self.next_point_for_frame()
+    })
+  }
+}
+
+impl<'a> Iterator for FramePointIterator<'a> {
   type Item = &'a Point;
 
   fn next(&mut self) -> Option<Self::Item> {
