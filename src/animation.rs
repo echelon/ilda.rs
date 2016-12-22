@@ -24,7 +24,7 @@ pub struct Frame {
 }
 
 /// A single coordinate point for the laser to draw.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct Point {
   /// X coordinate.
   pub x: i16,
@@ -110,6 +110,22 @@ impl Animation {
     })
   }
 
+  /// Get an frame iterator for the animation.
+  pub fn into_frame_iter<'a>(&'a self) -> AnimationFrameIterator<'a> {
+    AnimationFrameIterator { animation: self, index: 0 }
+  }
+
+  /// Get a point iterator for the animation, which will iterate over all points
+  /// from all frames.
+  pub fn into_point_iter<'a>(&'a self) -> AnimationPointIterator<'a> {
+    AnimationPointIterator {
+      animation: self,
+      current_frame: self.frames.get(0),
+      frame_index: 0,
+      point_index: 0,
+    }
+  }
+
   /// Return a reference to the frames.
   pub fn get_frames(&self) -> &Vec<Frame> {
     &self.frames
@@ -143,35 +159,62 @@ impl Frame {
   }
 }
 
-pub struct FrameIterator<'a> {
+/// Iterate over frames in the animation.
+pub struct AnimationFrameIterator<'a> {
   animation: &'a Animation,
   index: usize,
 }
 
-pub struct PointIterator<'a> {
+/// Iterate over all the points from all of the frames in the animation.
+pub struct AnimationPointIterator<'a> {
+  animation: &'a Animation,
+  current_frame: Option<&'a Frame>, // Iteration ends when None.
+  frame_index: usize,
+  point_index: usize,
+}
+
+impl <'a> AnimationPointIterator<'a> {
+  // Get the next point for the current frame and advance pointer.
+  fn next_point_for_frame(&mut self) -> Option<&'a Point> {
+    match self.current_frame {
+      None => return None, // Iteration has ended
+      Some(frame) => {
+        match frame.get_point(self.point_index) {
+          Some(point) => {
+            self.point_index += 1;
+            Some(point)
+          },
+          None => None,
+        }
+      },
+    }
+  }
+
+  // Get the next frame and advance pointer.
+  fn next_frame(&mut self) -> Option<&'a Frame> {
+    self.frame_index += 1;
+    self.point_index = 0;
+    self.current_frame = self.animation.get_frame(self.frame_index);
+    self.current_frame
+  }
+}
+
+pub struct FramePointIterator<'a> {
   frame: &'a Frame,
   index: usize,
 }
 
-impl <'a> IntoIterator for &'a Animation {
-  type IntoIter = FrameIterator<'a>;
-  type Item = &'a Frame;
-
-  fn into_iter(self) -> Self::IntoIter {
-    FrameIterator { animation: self, index: 0 }
-  }
-}
 
 impl<'a> IntoIterator for &'a Frame {
-  type IntoIter = PointIterator<'a>;
+  type IntoIter = FramePointIterator<'a>;
   type Item = &'a Point;
 
   fn into_iter(self) -> Self::IntoIter {
-    PointIterator { frame: self, index: 0 }
+    FramePointIterator { frame: self, index: 0 }
   }
 }
 
-impl<'a> Iterator for FrameIterator<'a> {
+impl<'a> Iterator for AnimationFrameIterator<'a> {
   type Item = &'a Frame;
 
   fn next(&mut self) -> Option<Self::Item> {
@@ -181,12 +224,110 @@ impl<'a> Iterator for FrameIterator<'a> {
   }
 }
 
-impl<'a> Iterator for PointIterator<'a> {
+impl<'a> Iterator for AnimationPointIterator<'a> {
+  type Item = &'a Point;
+
+  fn next(&mut self) -> Option<Self::Item> {
+    self.next_point_for_frame().or_else(|| {
+      self.next_frame();
+      self.next_point_for_frame()
+    })
+  }
+}
+
+impl<'a> Iterator for FramePointIterator<'a> {
   type Item = &'a Point;
 
   fn next(&mut self) -> Option<Self::Item> {
     let item = self.frame.get_point(self.index);
     self.index += 1;
     item
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn test_animation_frame_iterator() {
+    // Create sentinel value frames.
+    fn frame(num_points: usize) -> Frame {
+      let mut points = Vec::new();
+      for _i in 0..num_points {
+        points.push(Point::default());
+      }
+      Frame {
+        points: points,
+        frame_name: None,
+        company_name: None,
+      }
+    }
+
+    let animation = Animation {
+      frames: vec![frame(1), frame(2), frame(3)],
+    };
+
+    let mut iter = animation.into_frame_iter();
+
+    let frame = iter.next();
+    assert!(frame.is_some());
+    assert_eq!(1, frame.unwrap().point_count());
+
+    let frame = iter.next();
+    assert!(frame.is_some());
+    assert_eq!(2, frame.unwrap().point_count());
+
+    let frame = iter.next();
+    assert!(frame.is_some());
+    assert_eq!(3, frame.unwrap().point_count());
+
+    let frame = iter.next();
+    assert!(frame.is_none());
+  }
+
+  #[test]
+  fn test_animation_point_iterator() {
+    let frame1 = frame(vec![point(0), point(1), point(2)]);
+    let frame2 = frame(vec![point(3), point(4)]);
+    let frame3 = frame(vec![point(5)]);
+    let frame4 = frame(vec![point(6), point(7)]);
+
+    let animation = Animation {
+      frames: vec![frame1, frame2, frame3, frame4],
+    };
+
+    let values: Vec<_> = animation.into_point_iter()
+        .map(|point| point.r)
+        .collect();
+
+    let expected = vec![0, 1, 2, 3, 4, 5, 6, 7];
+    assert_eq!(expected, values);
+  }
+
+  #[test]
+  fn test_frame_point_iterator() {
+    let frame = frame(vec![point(0), point(1), point(2), point(3), point(4)]);
+
+    let values: Vec<_> = frame.into_iter()
+        .map(|point| point.r)
+        .collect();
+
+    let expected = vec![0, 1, 2, 3, 4];
+    assert_eq!(expected, values);
+  }
+
+  // Create sentinel value points.
+  fn point(color: u8) -> Point {
+    Point { x: 0, y: 0, r: color, g: color, b: color }
+  }
+
+  // CTOR.
+  fn frame(points: Vec<Point>) -> Frame {
+    Frame {
+      points: points,
+      frame_name: None,
+      company_name: None,
+    }
   }
 }
