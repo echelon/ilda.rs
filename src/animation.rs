@@ -24,7 +24,7 @@ pub struct Frame {
 }
 
 /// A single coordinate point for the laser to draw.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct Point {
   /// X coordinate.
   pub x: i16,
@@ -242,5 +242,54 @@ impl<'a> Iterator for FramePointIterator<'a> {
     let item = self.frame.get_point(self.index);
     self.index += 1;
     item
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn test_animation_frame_iterator() {
+    let animation = Animation {
+      frames: vec![frame(1), frame(2), frame(3)],
+    };
+
+    let mut iter = animation.into_frame_iter();
+
+    let frame = iter.next();
+    assert!(frame.is_some());
+    assert_eq!(1, frame.unwrap().point_count());
+
+    let frame = iter.next();
+    assert!(frame.is_some());
+    assert_eq!(2, frame.unwrap().point_count());
+
+    let frame = iter.next();
+    assert!(frame.is_some());
+    assert_eq!(3, frame.unwrap().point_count());
+
+    let frame = iter.next();
+    assert!(frame.is_none());
+  }
+
+  #[test]
+  fn test_animation_point_iterator() {
+  }
+
+  #[test]
+  fn test_frame_point_iterator() {
+  }
+
+  fn frame(num_points: usize) -> Frame {
+    let mut points = Vec::new();
+    for _i in 0..num_points {
+      points.push(Point::default());
+    }
+    Frame {
+      points: points,
+      frame_name: None,
+      company_name: None,
+    }
   }
 }
