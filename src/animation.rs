@@ -251,6 +251,19 @@ mod tests {
 
   #[test]
   fn test_animation_frame_iterator() {
+    // Create sentinel value frames.
+    fn frame(num_points: usize) -> Frame {
+      let mut points = Vec::new();
+      for _i in 0..num_points {
+        points.push(Point::default());
+      }
+      Frame {
+        points: points,
+        frame_name: None,
+        company_name: None,
+      }
+    }
+
     let animation = Animation {
       frames: vec![frame(1), frame(2), frame(3)],
     };
@@ -275,17 +288,42 @@ mod tests {
 
   #[test]
   fn test_animation_point_iterator() {
+    let frame1 = frame(vec![point(0), point(1), point(2)]);
+    let frame2 = frame(vec![point(3), point(4)]);
+    let frame3 = frame(vec![point(5)]);
+    let frame4 = frame(vec![point(6), point(7)]);
+
+    let animation = Animation {
+      frames: vec![frame1, frame2, frame3, frame4],
+    };
+
+    let values: Vec<_> = animation.into_point_iter()
+        .map(|point| point.r)
+        .collect();
+
+    let expected = vec![0, 1, 2, 3, 4, 5, 6, 7];
+    assert_eq!(expected, values);
   }
 
   #[test]
   fn test_frame_point_iterator() {
+    let frame = frame(vec![point(0), point(1), point(2), point(3), point(4)]);
+
+    let values: Vec<_> = frame.into_iter()
+        .map(|point| point.r)
+        .collect();
+
+    let expected = vec![0, 1, 2, 3, 4];
+    assert_eq!(expected, values);
   }
 
-  fn frame(num_points: usize) -> Frame {
-    let mut points = Vec::new();
-    for _i in 0..num_points {
-      points.push(Point::default());
-    }
+  // Create sentinel value points.
+  fn point(color: u8) -> Point {
+    Point { x: 0, y: 0, r: color, g: color, b: color }
+  }
+
+  // CTOR.
+  fn frame(points: Vec<Point>) -> Frame {
     Frame {
       points: points,
       frame_name: None,
