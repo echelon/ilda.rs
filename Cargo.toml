@@ -1,6 +1,6 @@
 [package]
   name = "ilda"
-  version = "0.0.3"
+  version = "0.0.4"
   authors = [ "Brandon Thomas <bt@brand.io>", "Brandon Thomas <echelon@gmail.com>" ]
   description = "A library for reading ILDA laser projection display files."
   keywords = [ "ILDA", "laser", "projector", "projection", "graphics" ]
