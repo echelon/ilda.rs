@@ -139,7 +139,7 @@ impl IndexedPoint2d {
 }
 
 /// Color Palette (format 2)
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct ColorPalette {
   pub r: u8,
   pub g: u8,

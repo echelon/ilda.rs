@@ -5,6 +5,7 @@
 //! simple representation that doesn't expose color palettes, indexed colors,
 //! and so forth.
 
+use color::default_color_index;
 use data::IldaEntry;
 use error::IldaError;
 use parser::read_file;
@@ -70,26 +71,60 @@ impl Animation {
             frame_name: header.name.take(),
             company_name: header.company_name.take(),
           });
+
+          continue;
         },
+        _ => {},
+      }
+
+      let mut frame = match current_frame {
+        // TODO: Better error type / message
+        None => return Err(IldaError::InvalidData),
+        Some(ref mut frame) => frame,
+      };
+
+      match entry {
+        IldaEntry::HeaderEntry(_) => unreachable!(), // Already handled.
         IldaEntry::TcPoint2dEntry(point) => {
-          match current_frame {
-            None => {
-              // TODO: Better error type / message.
-              return Err(IldaError::InvalidData);
-            },
-            Some(ref mut frame) => {
-              frame.points.push(Point {
-                x: point.x,
-                y: point.y,
-                r: point.r,
-                g: point.g,
-                b: point.b,
-              });
-            },
-          }
+          frame.points.push(Point {
+            x: point.x,
+            y: point.y,
+            r: point.r,
+            g: point.g,
+            b: point.b,
+          });
+        },
+        IldaEntry::TcPoint3dEntry(point) => {
+          frame.points.push(Point {
+            x: point.x,
+            y: point.y,
+            r: point.r,
+            g: point.g,
+            b: point.b,
+          });
+        },
+        IldaEntry::IdxPoint2dEntry(point) => {
+          let color = default_color_index(point.color_index);
+          frame.points.push(Point {
+            x: point.x,
+            y: point.y,
+            r: color.r,
+            g: color.g,
+            b: color.b,
+          });
+        },
+        IldaEntry::IdxPoint3dEntry(point) => {
+          let color = default_color_index(point.color_index);
+          frame.points.push(Point {
+            x: point.x,
+            y: point.y,
+            r: color.r,
+            g: color.g,
+            b: color.b,
+          });
         },
         _ => {
-          // TODO: We only support one kind of frame for now. :(
+          // TODO: Handle color palettes.
           return Err(IldaError::Unsupported);
         },
       }

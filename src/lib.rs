@@ -47,6 +47,7 @@ pub enum Format {
 }
 
 mod error;
+mod color;
 
 pub mod data;
 pub mod idtf;
