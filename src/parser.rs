@@ -117,8 +117,7 @@ pub fn read_bytes(ilda_bytes: &[u8]) -> Result<Vec<IldaEntry>, IldaError> {
 }
 
 fn read_header(header_bytes: &[u8]) -> Result<Header, IldaError> {
-  if header_bytes.len() != 32
-      || &header_bytes[0..4] != &ILDA_HEADER {
+  if header_bytes.len() != 32 || &header_bytes[0..4] != &ILDA_HEADER {
     return Err(IldaError::InvalidHeader);
   }
 

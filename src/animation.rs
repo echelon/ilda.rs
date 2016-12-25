@@ -8,6 +8,7 @@
 use color::default_color_index;
 use data::IldaEntry;
 use error::IldaError;
+use parser::read_bytes;
 use parser::read_file;
 
 /// An animation is comprised of one or more frames.
@@ -52,7 +53,47 @@ impl Animation {
   /// Read an animation from an ILDA file.
   pub fn read_file(filename: &str) -> Result<Animation, IldaError> {
     let entries = read_file(filename)?;
+    Animation::process_entries(entries)
+  }
 
+  /// Read an animation from raw ILDA bytes.
+  pub fn read_bytes(ilda_bytes: &[u8]) -> Result<Animation, IldaError> {
+    let entries = read_bytes(ilda_bytes)?;
+    Animation::process_entries(entries)
+  }
+
+  /// Get an frame iterator for the animation.
+  pub fn into_frame_iter<'a>(&'a self) -> AnimationFrameIterator<'a> {
+    AnimationFrameIterator { animation: self, index: 0 }
+  }
+
+  /// Get a point iterator for the animation, which will iterate over all points
+  /// from all frames.
+  pub fn into_point_iter<'a>(&'a self) -> AnimationPointIterator<'a> {
+    AnimationPointIterator {
+      animation: self,
+      current_frame: self.frames.get(0),
+      frame_index: 0,
+      point_index: 0,
+    }
+  }
+
+  /// Return a reference to the frames.
+  pub fn get_frames(&self) -> &Vec<Frame> {
+    &self.frames
+  }
+
+  /// Return the number of frames in the animation.
+  pub fn frame_count(&self) -> usize {
+    self.frames.len()
+  }
+
+  /// Get a reference to the frame at the given offset, if it exists.
+  pub fn get_frame(&self, position: usize) -> Option<&Frame> {
+    self.frames.get(position)
+  }
+
+  fn process_entries(entries: Vec<IldaEntry>) -> Result<Animation, IldaError> {
     let mut frames = Vec::new();
     let mut current_frame = None;
 
@@ -143,37 +184,6 @@ impl Animation {
     Ok(Animation {
       frames: frames,
     })
-  }
-
-  /// Get an frame iterator for the animation.
-  pub fn into_frame_iter<'a>(&'a self) -> AnimationFrameIterator<'a> {
-    AnimationFrameIterator { animation: self, index: 0 }
-  }
-
-  /// Get a point iterator for the animation, which will iterate over all points
-  /// from all frames.
-  pub fn into_point_iter<'a>(&'a self) -> AnimationPointIterator<'a> {
-    AnimationPointIterator {
-      animation: self,
-      current_frame: self.frames.get(0),
-      frame_index: 0,
-      point_index: 0,
-    }
-  }
-
-  /// Return a reference to the frames.
-  pub fn get_frames(&self) -> &Vec<Frame> {
-    &self.frames
-  }
-
-  /// Return the number of frames in the animation.
-  pub fn frame_count(&self) -> usize {
-    self.frames.len()
-  }
-
-  /// Get a reference to the frame at the given offset, if it exists.
-  pub fn get_frame(&self, position: usize) -> Option<&Frame> {
-    self.frames.get(position)
   }
 }
 

@@ -71,10 +71,15 @@ impl Header {
 /// 3D Coordinates with Indexed Color (format 0)
 #[derive(Clone, Debug)]
 pub struct IndexedPoint3d {
+  /// X coordinate
   pub x: i16,
+  /// Y coordinate
   pub y: i16,
+  /// Z coordinate
   pub z: i16,
+  /// Last point bit and blanking bit.
   pub status_code: i8,
+  /// Index into color palette (if provided), or default color index.
   pub color_index: i8,
 }
 
@@ -107,9 +112,13 @@ impl IndexedPoint3d {
 /// 2D Coordinates with Indexed Color (format 1)
 #[derive(Clone, Debug)]
 pub struct IndexedPoint2d {
+  /// X coordinate
   pub x: i16,
+  /// Y coordinate
   pub y: i16,
+  /// Last point bit and blanking bit.
   pub status_code: i8,
+  /// Index into color palette (if provided), or default color index.
   pub color_index: i8,
 }
 
@@ -141,8 +150,11 @@ impl IndexedPoint2d {
 /// Color Palette (format 2)
 #[derive(Clone, Debug, PartialEq)]
 pub struct ColorPalette {
+  /// Red.
   pub r: u8,
+  /// Green.
   pub g: u8,
+  /// Blue.
   pub b: u8,
 }
 
@@ -173,12 +185,19 @@ impl ColorPalette {
 /// 3D Coordinates with True Color (format 4)
 #[derive(Clone, Debug)]
 pub struct TrueColorPoint3d {
+  /// X coordinate
   pub x: i16,
+  /// Y coordinate
   pub y: i16,
+  /// Z coordinate
   pub z: i16,
+  /// Last point bit and blanking bit.
   pub status_code: i8,
+  /// Blue
   pub b: u8,
+  /// Green
   pub g: u8,
+  /// Red
   pub r: u8,
 }
 
@@ -213,11 +232,17 @@ impl TrueColorPoint3d {
 /// 3D Coordinates with True Color (format 5)
 #[derive(Clone, Debug)]
 pub struct TrueColorPoint2d {
+  /// X coordinate
   pub x: i16,
+  /// Y coordinate
   pub y: i16,
+  /// Last point bit and blanking bit.
   pub status_code: i8,
+  /// Blue
   pub b: u8,
+  /// Green
   pub g: u8,
+  /// Red
   pub r: u8,
 }
 
@@ -248,6 +273,7 @@ impl TrueColorPoint2d {
   }
 }
 
+/// ILDA header and data records.
 #[derive(Clone, Debug)]
 pub enum IldaEntry {
   HeaderEntry(Header),
@@ -263,4 +289,3 @@ pub enum IldaEntry {
 fn read_i16(bytes: &[u8]) -> i16 {
   (((bytes[0] as u16) << 8) | (bytes[1] as u16)) as i16
 }
-

@@ -20,7 +20,10 @@ pub enum IldaError {
   InvalidHeader,
 
   /// Wraps standard library IO errors.
-  IoError { cause: io::Error },
+  IoError {
+    /// Original cause.
+    cause: io::Error
+  },
 
   /// No data in the file, or nothing could be parsed.
   NoData,
