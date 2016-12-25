@@ -4,6 +4,8 @@ A Rust library for reading ILDA laser projection display files.
 
 [Documentation](https://docs.rs/ilda/) hosted by *docs.rs*.
 
+[![Build Status](https://travis-ci.org/echelon/ilda.rs.svg?branch=master)](https://travis-ci.org/echelon/ilda.rs)
+
 Reference
 ---------
 - [http://www.laserist.org/StandardsDocs/ILDA_IDTF14_rev011.pdf](ILDA
