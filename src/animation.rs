@@ -51,6 +51,14 @@ pub struct Point {
 
 impl Animation {
   /// Read an animation from an ILDA file.
+  ///
+  /// ```
+  /// # use ilda::animation::Animation;
+  /// let filename = "examples/files/ildatest.ild";
+  /// let animation = Animation::read_file(filename).unwrap();
+  ///
+  /// assert_eq!(2, animation.frame_count());
+  /// ```
   pub fn read_file(filename: &str) -> Result<Animation, IldaError> {
     let entries = read_file(filename)?;
     Animation::process_entries(entries)
@@ -204,13 +212,13 @@ impl Frame {
   }
 }
 
-/// Iterate over frames in the animation.
+/// Iterator over all the frames in the animation.
 pub struct AnimationFrameIterator<'a> {
   animation: &'a Animation,
   index: usize,
 }
 
-/// Iterate over all the points from all of the frames in the animation.
+/// Iterator over all the points from all of the frames in the animation.
 pub struct AnimationPointIterator<'a> {
   animation: &'a Animation,
   current_frame: Option<&'a Frame>, // Iteration ends when None.
@@ -244,11 +252,11 @@ impl <'a> AnimationPointIterator<'a> {
   }
 }
 
+/// Iterator over all of the points in a single frame.
 pub struct FramePointIterator<'a> {
   frame: &'a Frame,
   index: usize,
 }
-
 
 impl<'a> IntoIterator for &'a Frame {
   type IntoIter = FramePointIterator<'a>;

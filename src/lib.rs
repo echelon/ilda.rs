@@ -10,7 +10,7 @@
 //! API may be used in the future to serialize frames back into binary ILDA
 //! files (TODO).
 
-// TODO: Warn on missing documentation. #![warn(missing_docs)]
+#![warn(missing_docs)]
 #![warn(unused_extern_crates)]
 #![warn(unused_qualifications)]
 

@@ -1,5 +1,8 @@
 // Copyright (c) 2015-2016 Brandon Thomas <bt@brand.io>
 
+//! Low level parsing that returns headers and data fields closer to the
+//! underlying ILDA data model.
+
 use data::COLOR_PALETTE_SIZE;
 use data::ColorPalette;
 use data::Format;

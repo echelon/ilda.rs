@@ -1,15 +1,24 @@
 // Copyright (c) 2016 Brandon Thomas <bt@brand.io>, <echelon@gmail.com>
 
+//! Structures in the ILDA data model.
+
 use error::IldaError;
 
+/// Size of an ILDA header section in bytes.
 pub const HEADER_SIZE : usize = 32;
+/// Size of an ILDA color palette data section in bytes.
 pub const COLOR_PALETTE_SIZE: usize = 3;
+/// Size of an ILDA Indexed 2D point data section in bytes.
 pub const INDEXED_2D_DATA_SIZE: usize = 6;
+/// Size of an ILDA Indexed 3D point data section in bytes.
 pub const INDEXED_3D_DATA_SIZE: usize = 8;
+/// Size of an ILDA True Color 2D point data section in bytes.
 pub const TRUE_COLOR_2D_DATA_SIZE: usize = 8;
+/// Size of an ILDA True Color 3D point data section in bytes.
 pub const TRUE_COLOR_3D_DATA_SIZE: usize = 10;
 
 /// The payload encoding formats currently supported.
+#[allow(missing_docs)]
 pub enum Format {
   Unknown,
   ColorPalette,
@@ -181,7 +190,6 @@ impl ColorPalette {
   }
 }
 
-
 /// 3D Coordinates with True Color (format 4)
 #[derive(Clone, Debug)]
 pub struct TrueColorPoint3d {
@@ -274,6 +282,7 @@ impl TrueColorPoint2d {
 }
 
 /// ILDA header and data records.
+#[allow(missing_docs)]
 #[derive(Clone, Debug)]
 pub enum IldaEntry {
   HeaderEntry(Header),

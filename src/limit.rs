@@ -1,5 +1,7 @@
 // Copyright (c) 2016 Brandon Thomas <bt@brand.io>, <echelon@gmail.com>
 
+//! Constants for ILDA's dimensional maxima and minima.
+
 /// Extreme right.
 pub const MAX_X : i16 = 32767;
 
