@@ -44,9 +44,8 @@ pub struct Point {
   // TODO:
   // /// Whether this is the last point in the image.
   // pub is_last_point: bool,
-  // TODO:
-  // /// If the laser should treat this as a blanking point.
-  // pub is_blank: bool,
+  /// If the laser should treat this as a blanking point.
+  pub is_blank: bool,
 }
 
 impl Animation {
@@ -132,51 +131,8 @@ impl Animation {
         Some(ref mut frame) => frame,
       };
 
-      match entry {
-        IldaEntry::HeaderEntry(_) => unreachable!(), // Already handled.
-        IldaEntry::TcPoint2dEntry(point) => {
-          frame.points.push(Point {
-            x: point.x,
-            y: point.y,
-            r: point.r,
-            g: point.g,
-            b: point.b,
-          });
-        },
-        IldaEntry::TcPoint3dEntry(point) => {
-          frame.points.push(Point {
-            x: point.x,
-            y: point.y,
-            r: point.r,
-            g: point.g,
-            b: point.b,
-          });
-        },
-        IldaEntry::IdxPoint2dEntry(point) => {
-          let color = default_color_index(point.color_index);
-          frame.points.push(Point {
-            x: point.x,
-            y: point.y,
-            r: color.r,
-            g: color.g,
-            b: color.b,
-          });
-        },
-        IldaEntry::IdxPoint3dEntry(point) => {
-          let color = default_color_index(point.color_index);
-          frame.points.push(Point {
-            x: point.x,
-            y: point.y,
-            r: color.r,
-            g: color.g,
-            b: color.b,
-          });
-        },
-        _ => {
-          // TODO: Handle color palettes.
-          return Err(IldaError::Unsupported);
-        },
-      }
+      let point = ilda_entry_to_point(entry)?;
+      frame.points.push(point);
     }
 
     // Take the last frame.
@@ -192,6 +148,63 @@ impl Animation {
     Ok(Animation {
       frames: frames,
     })
+  }
+}
+
+/// Convert an IldaEntry containing a point into a respective animation point.
+/// Color palettes and headers will return errors.
+pub fn ilda_entry_to_point(entry: IldaEntry) -> Result<Point, IldaError> {
+  match entry {
+    IldaEntry::HeaderEntry(_) => {
+      // Already handled by caller.
+      Err(IldaError::InvalidData)
+    },
+    IldaEntry::ColorPaletteEntry(_) => {
+      // TODO: Handle color palettes.
+      Err(IldaError::Unsupported)
+    },
+    IldaEntry::TcPoint2dEntry(point) => {
+      Ok(Point {
+        x: point.x,
+        y: point.y,
+        r: point.r,
+        g: point.g,
+        b: point.b,
+        is_blank: point.is_blank(),
+      })
+    },
+    IldaEntry::TcPoint3dEntry(point) => {
+      Ok(Point {
+        x: point.x,
+        y: point.y,
+        r: point.r,
+        g: point.g,
+        b: point.b,
+        is_blank: point.is_blank(),
+      })
+    },
+    IldaEntry::IdxPoint2dEntry(point) => {
+      let color = default_color_index(point.color_index);
+      Ok(Point {
+        x: point.x,
+        y: point.y,
+        r: color.r,
+        g: color.g,
+        b: color.b,
+        is_blank: point.is_blank(),
+      })
+    },
+    IldaEntry::IdxPoint3dEntry(point) => {
+      let color = default_color_index(point.color_index);
+      Ok(Point {
+        x: point.x,
+        y: point.y,
+        r: color.r,
+        g: color.g,
+        b: color.b,
+        is_blank: point.is_blank(),
+      })
+    },
   }
 }
 
@@ -301,6 +314,9 @@ impl<'a> Iterator for FramePointIterator<'a> {
 #[cfg(test)]
 mod tests {
   use super::*;
+  use data::IldaEntry;
+  use data::IndexedPoint2d;
+  use data::TrueColorPoint2d;
 
   #[test]
   fn test_animation_frame_iterator() {
@@ -370,9 +386,78 @@ mod tests {
     assert_eq!(expected, values);
   }
 
+  #[test]
+  fn test_ilda_entry_to_point_true_color() {
+    let ilda_point = TrueColorPoint2d::default();
+    let entry = IldaEntry::TcPoint2dEntry(ilda_point);
+    let point = ilda_entry_to_point(entry).unwrap();
+
+    assert_eq!(point.r, 0);
+    assert_eq!(point.g, 0);
+    assert_eq!(point.b, 0);
+    assert_eq!(point.x, 0);
+    assert_eq!(point.y, 0);
+    assert_eq!(point.is_blank, false);
+
+    let mut ilda_point = TrueColorPoint2d::default();
+    ilda_point.r = 255;
+    ilda_point.g = 127;
+    ilda_point.b = 32;
+    ilda_point.x = 10_000;
+    ilda_point.y = -10_000;
+    ilda_point.status_code = 64;
+
+    let entry = IldaEntry::TcPoint2dEntry(ilda_point);
+    let point = ilda_entry_to_point(entry).unwrap();
+
+    assert_eq!(point.r, 255);
+    assert_eq!(point.g, 127);
+    assert_eq!(point.b, 32);
+    assert_eq!(point.x, 10_000);
+    assert_eq!(point.y, -10_000);
+    assert_eq!(point.is_blank, true);
+  }
+
+  #[test]
+  fn test_ilda_entry_to_point_indexed() {
+    let ilda_point = IndexedPoint2d::default();
+    let entry = IldaEntry::IdxPoint2dEntry(ilda_point);
+    let point = ilda_entry_to_point(entry).unwrap();
+
+    assert_eq!(point.r, 255); // Red is on for indexed color "0"
+    assert_eq!(point.g, 0);
+    assert_eq!(point.b, 0);
+    assert_eq!(point.x, 0);
+    assert_eq!(point.y, 0);
+    assert_eq!(point.is_blank, false);
+
+    let mut ilda_point = IndexedPoint2d::default();
+    ilda_point.x = 10_000;
+    ilda_point.y = -10_000;
+    ilda_point.status_code = 64;
+    ilda_point.color_index = 57;
+
+    let entry = IldaEntry::IdxPoint2dEntry(ilda_point);
+    let point = ilda_entry_to_point(entry).unwrap();
+
+    assert_eq!(point.r, 255);
+    assert_eq!(point.g, 224);
+    assert_eq!(point.b, 224);
+    assert_eq!(point.x, 10_000);
+    assert_eq!(point.y, -10_000);
+    assert_eq!(point.is_blank, true);
+  }
+
   // Create sentinel value points.
   fn point(color: u8) -> Point {
-    Point { x: 0, y: 0, r: color, g: color, b: color }
+    Point {
+      x: 0,
+      y: 0,
+      r: color,
+      g: color,
+      b: color,
+      is_blank: false,
+    }
   }
 
   // CTOR.

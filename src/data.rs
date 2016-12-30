@@ -78,7 +78,7 @@ impl Header {
 }
 
 /// 3D Coordinates with Indexed Color (format 0)
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct IndexedPoint3d {
   /// X coordinate
   pub x: i16,
@@ -87,9 +87,9 @@ pub struct IndexedPoint3d {
   /// Z coordinate
   pub z: i16,
   /// Last point bit and blanking bit.
-  pub status_code: i8,
+  pub status_code: u8,
   /// Index into color palette (if provided), or default color index.
-  pub color_index: i8,
+  pub color_index: u8,
 }
 
 impl IndexedPoint3d {
@@ -109,26 +109,32 @@ impl IndexedPoint3d {
         x: read_i16(&bytes[j .. j+2]),
         y: read_i16(&bytes[j+2 .. j+4]),
         z: read_i16(&bytes[j+4 .. j+6]),
-        status_code: bytes[j+6] as i8,
-        color_index: bytes[j+7] as i8,
+        status_code: bytes[j+6],
+        color_index: bytes[j+7],
       });
     }
 
     Ok(out)
   }
+
+  /// Whether the point is a blanking point.
+  pub fn is_blank(&self) -> bool {
+    // 7th high order bit is the blanking bit.
+    self.status_code & 64 == 64
+  }
 }
 
 /// 2D Coordinates with Indexed Color (format 1)
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct IndexedPoint2d {
   /// X coordinate
   pub x: i16,
   /// Y coordinate
   pub y: i16,
   /// Last point bit and blanking bit.
-  pub status_code: i8,
+  pub status_code: u8,
   /// Index into color palette (if provided), or default color index.
-  pub color_index: i8,
+  pub color_index: u8,
 }
 
 impl IndexedPoint2d {
@@ -147,12 +153,18 @@ impl IndexedPoint2d {
       out.push(IndexedPoint2d {
         x: read_i16(&bytes[j .. j+2]),
         y: read_i16(&bytes[j+2 .. j+4]),
-        status_code: bytes[j+4] as i8,
-        color_index: bytes[j+5] as i8,
+        status_code: bytes[j+4],
+        color_index: bytes[j+5],
       });
     }
 
     Ok(out)
+  }
+
+  /// Whether the point is a blanking point.
+  pub fn is_blank(&self) -> bool {
+    // 7th high order bit is the blanking bit.
+    self.status_code & 64 == 64
   }
 }
 
@@ -191,7 +203,7 @@ impl ColorPalette {
 }
 
 /// 3D Coordinates with True Color (format 4)
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct TrueColorPoint3d {
   /// X coordinate
   pub x: i16,
@@ -200,7 +212,7 @@ pub struct TrueColorPoint3d {
   /// Z coordinate
   pub z: i16,
   /// Last point bit and blanking bit.
-  pub status_code: i8,
+  pub status_code: u8,
   /// Blue
   pub b: u8,
   /// Green
@@ -226,7 +238,7 @@ impl TrueColorPoint3d {
         x: read_i16(&bytes[j .. j+2]),
         y: read_i16(&bytes[j+2 .. j+4]),
         z: read_i16(&bytes[j+4 .. j+6]),
-        status_code: bytes[j+6] as i8,
+        status_code: bytes[j+6],
         b: bytes[7],
         g: bytes[8],
         r: bytes[9],
@@ -235,17 +247,23 @@ impl TrueColorPoint3d {
 
     Ok(out)
   }
+
+  /// Whether the point is a blanking point.
+  pub fn is_blank(&self) -> bool {
+    // 7th high order bit is the blanking bit.
+    self.status_code & 64 == 64
+  }
 }
 
 /// 3D Coordinates with True Color (format 5)
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct TrueColorPoint2d {
   /// X coordinate
   pub x: i16,
   /// Y coordinate
   pub y: i16,
   /// Last point bit and blanking bit.
-  pub status_code: i8,
+  pub status_code: u8,
   /// Blue
   pub b: u8,
   /// Green
@@ -270,7 +288,7 @@ impl TrueColorPoint2d {
       out.push(TrueColorPoint2d {
         x: read_i16(&bytes[j .. j+2]),
         y: read_i16(&bytes[j+2 .. j+4]),
-        status_code: bytes[j+4] as i8,
+        status_code: bytes[j+4],
         b: bytes[j+5],
         g: bytes[j+6],
         r: bytes[j+7],
@@ -278,6 +296,12 @@ impl TrueColorPoint2d {
     }
 
     Ok(out)
+  }
+
+  /// Whether the point is a blanking point.
+  pub fn is_blank(&self) -> bool {
+    // 7th high order bit is the blanking bit.
+    self.status_code & 64 == 64
   }
 }
 
@@ -297,4 +321,61 @@ pub enum IldaEntry {
 // Reads in as little endian from big endian source. Not cross-platform.
 fn read_i16(bytes: &[u8]) -> i16 {
   (((bytes[0] as u16) << 8) | (bytes[1] as u16)) as i16
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn test_indexed_2d_blanking_bit() {
+    let mut point = IndexedPoint2d::default();
+    point.status_code = 0;
+    assert_eq!(false, point.is_blank());
+    point.status_code = 128;
+    assert_eq!(false, point.is_blank());
+    point.status_code = 64;
+    assert_eq!(true, point.is_blank());
+    point.status_code = 255;
+    assert_eq!(true, point.is_blank());
+  }
+
+  #[test]
+  fn test_indexed_3d_blanking_bit() {
+    let mut point = IndexedPoint3d::default();
+    point.status_code = 0;
+    assert_eq!(false, point.is_blank());
+    point.status_code = 128;
+    assert_eq!(false, point.is_blank());
+    point.status_code = 64;
+    assert_eq!(true, point.is_blank());
+    point.status_code = 255;
+    assert_eq!(true, point.is_blank());
+  }
+
+  #[test]
+  fn test_truecolor_2d_blanking_bit() {
+    let mut point = TrueColorPoint2d::default();
+    point.status_code = 0;
+    assert_eq!(false, point.is_blank());
+    point.status_code = 128;
+    assert_eq!(false, point.is_blank());
+    point.status_code = 64;
+    assert_eq!(true, point.is_blank());
+    point.status_code = 255;
+    assert_eq!(true, point.is_blank());
+  }
+
+  #[test]
+  fn test_truecolor_3d_blanking_bit() {
+    let mut point = TrueColorPoint3d::default();
+    point.status_code = 0;
+    assert_eq!(false, point.is_blank());
+    point.status_code = 128;
+    assert_eq!(false, point.is_blank());
+    point.status_code = 64;
+    assert_eq!(true, point.is_blank());
+    point.status_code = 255;
+    assert_eq!(true, point.is_blank());
+  }
 }

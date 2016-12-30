@@ -4,7 +4,7 @@ use data::ColorPalette;
 
 /// Return the default RGB values for a given color index.
 /// This is used when not color palette header is supplied.
-pub fn default_color_index(index: i8) -> ColorPalette {
+pub fn default_color_index(index: u8) -> ColorPalette {
   match index {
     0 => ColorPalette { r: 255, g: 0, b: 0 }, // Red
     1 => ColorPalette { r: 255, g: 16, b: 0 },
@@ -97,6 +97,8 @@ mod tests {
     assert_eq!(ColorPalette { r: 255, g: 255, b: 255 },
         default_color_index(100));
     assert_eq!(ColorPalette { r: 255, g: 255, b: 255 },
-        default_color_index(-5));
+    default_color_index(127));
+    assert_eq!(ColorPalette { r: 255, g: 255, b: 255 },
+        default_color_index(255));
   }
 }
