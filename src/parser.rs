@@ -32,13 +32,14 @@ pub fn read_file(filename: &str) -> Result<Vec<IldaEntry>, IldaError> {
   read_bytes(&contents[..])
 }
 
+#[derive(Debug)]
+enum NextRead { Header, I3d, I2d, Color, Tc3d, Tc2d, NsTc }
+
 /// Read ILDA data from raw bytes.
 pub fn read_bytes(ilda_bytes: &[u8]) -> Result<Vec<IldaEntry>, IldaError> {
   if ilda_bytes.len() < 32 {
     return Err(IldaError::FileTooSmall);
   }
-
-  enum NextRead { Header, I3d, I2d, Color, Tc3d, Tc2d };
 
   let mut vec = Vec::new();
   let mut i : usize = 0;
@@ -47,19 +48,34 @@ pub fn read_bytes(ilda_bytes: &[u8]) -> Result<Vec<IldaEntry>, IldaError> {
 
   // TODO(echelon): This isn't very concise.
   while i < ilda_bytes.len() {
+    println!("\nNext read: {:?}", next_read);
+
     match next_read {
       NextRead::Header => {
         let header = read_header(&ilda_bytes[i .. i + HEADER_SIZE])
             .map_err(|_| IldaError::InvalidHeader)?;
+
+        println!("Header read succesfully");
+
         next_read = match header.get_format() {
           Format::Indexed3d => NextRead::I3d,
           Format::Indexed2d => NextRead::I2d,
           Format::ColorPalette => NextRead::Color,
           Format::TrueColor3d => NextRead::Tc3d,
           Format::TrueColor2d => NextRead::Tc2d,
-          Format::Unknown => return Err(IldaError::InvalidHeader),
+          Format::NonstandardTrueColor => NextRead::NsTc,
+          Format::Unknown => {
+            println!("UNKNOWN HEADER");
+            return Err(IldaError::InvalidHeader)
+          },
         };
+
+        println!("Very Next read: {:?}", next_read);
+
         frames_to_read = header.record_count;
+
+        println!("Frames to read: {:?}", frames_to_read);
+
         vec.push(IldaEntry::HeaderEntry(header));
         i += HEADER_SIZE;
       },
@@ -113,6 +129,9 @@ pub fn read_bytes(ilda_bytes: &[u8]) -> Result<Vec<IldaEntry>, IldaError> {
         next_read = NextRead::Header;
         i += end;
       },
+      NextRead::NsTc => {
+        // TODO.
+      },
     };
   }
 
@@ -131,6 +150,10 @@ fn read_header(header_bytes: &[u8]) -> Result<Header, IldaError> {
   let total_frames      = read_u16(&header_bytes[28..30]);
   let projector_number  = header_bytes[31];
 
+  println!("Name: {:?}", name);
+  println!("Company Name: {:?}", company_name);
+  println!("Format code: {:?}", header_bytes[7]);
+
   Ok(Header {
     reserved: 0, // TODO: Read in.
     format_code: header_bytes[7],
@@ -142,6 +165,15 @@ fn read_header(header_bytes: &[u8]) -> Result<Header, IldaError> {
     projector_number: projector_number,
     reserved_2: 0, // TODO: Read in.
   })
+}
+
+fn read_format3_header(header_bytes: &[u8]) -> Result<Header, IldaError> {
+  if header_bytes.len() != 16 || &header_bytes[0..4] != &ILDA_HEADER {
+    return Err(IldaError::InvalidHeader);
+  }
+
+  // TODO WIP
+  return Err(IldaError::InvalidHeader);
 }
 
 fn read_name(bytes: &[u8]) -> Option<String> {

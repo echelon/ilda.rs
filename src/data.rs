@@ -24,6 +24,7 @@ pub enum Format {
   ColorPalette,
   Indexed2d,
   Indexed3d,
+  NonstandardTrueColor,
   TrueColor2d,
   TrueColor3d,
 }
@@ -70,6 +71,7 @@ impl Header {
       0u8 => Format::Indexed3d,
       1u8 => Format::Indexed2d,
       2u8 => Format::ColorPalette,
+      3u8 => Format::NonstandardTrueColor, // Not published as part of ILDA.
       4u8 => Format::TrueColor3d,
       5u8 => Format::TrueColor2d,
       _ => Format::Unknown,
