@@ -10,6 +10,7 @@ use data::IldaEntry;
 use error::IldaError;
 use parser::read_bytes;
 use parser::read_file;
+use point::SimplePoint;
 
 /// An animation is comprised of one or more frames.
 #[derive(Clone)]
@@ -20,32 +21,9 @@ pub struct Animation {
 /// A single frame of animation, comprised of many points.
 #[derive(Clone)]
 pub struct Frame {
-  points: Vec<Point>,
+  points: Vec<SimplePoint>,
   frame_name: Option<String>,
   company_name: Option<String>,
-}
-
-/// A single coordinate point for the laser to draw.
-#[derive(Clone, Debug, Default)]
-pub struct Point {
-  /// X coordinate.
-  pub x: i16,
-  /// Y coordinate.
-  pub y: i16,
-  // TODO:
-  // /// (Optional) Z coordinate.
-  // pub z: i16,
-  /// Red.
-  pub r: u8,
-  /// Green.
-  pub g: u8,
-  /// Blue.
-  pub b: u8,
-  // TODO:
-  // /// Whether this is the last point in the image.
-  // pub is_last_point: bool,
-  /// If the laser should treat this as a blanking point.
-  pub is_blank: bool,
 }
 
 impl Animation {
@@ -153,7 +131,7 @@ impl Animation {
 
 /// Convert an IldaEntry containing a point into a respective animation point.
 /// Color palettes and headers will return errors.
-pub fn ilda_entry_to_point(entry: IldaEntry) -> Result<Point, IldaError> {
+pub fn ilda_entry_to_point(entry: IldaEntry) -> Result<SimplePoint, IldaError> {
   match entry {
     IldaEntry::HeaderEntry(_) => {
       // Already handled by caller.
@@ -164,7 +142,7 @@ pub fn ilda_entry_to_point(entry: IldaEntry) -> Result<Point, IldaError> {
       Err(IldaError::Unsupported)
     },
     IldaEntry::TcPoint2dEntry(point) => {
-      Ok(Point {
+      Ok(SimplePoint {
         x: point.x,
         y: point.y,
         r: point.r,
@@ -174,7 +152,7 @@ pub fn ilda_entry_to_point(entry: IldaEntry) -> Result<Point, IldaError> {
       })
     },
     IldaEntry::TcPoint3dEntry(point) => {
-      Ok(Point {
+      Ok(SimplePoint {
         x: point.x,
         y: point.y,
         r: point.r,
@@ -185,7 +163,7 @@ pub fn ilda_entry_to_point(entry: IldaEntry) -> Result<Point, IldaError> {
     },
     IldaEntry::IdxPoint2dEntry(point) => {
       let color = default_color_index(point.color_index);
-      Ok(Point {
+      Ok(SimplePoint {
         x: point.x,
         y: point.y,
         r: color.r,
@@ -196,7 +174,7 @@ pub fn ilda_entry_to_point(entry: IldaEntry) -> Result<Point, IldaError> {
     },
     IldaEntry::IdxPoint3dEntry(point) => {
       let color = default_color_index(point.color_index);
-      Ok(Point {
+      Ok(SimplePoint {
         x: point.x,
         y: point.y,
         r: color.r,
@@ -210,7 +188,7 @@ pub fn ilda_entry_to_point(entry: IldaEntry) -> Result<Point, IldaError> {
 
 impl Frame {
   /// Get a reference to the points in the frame.
-  pub fn get_points(&self) -> &Vec<Point> {
+  pub fn get_points(&self) -> &Vec<SimplePoint> {
     &self.points
   }
 
@@ -220,7 +198,7 @@ impl Frame {
   }
 
   /// Get a reference to the point at the given offset, if it exists.
-  pub fn get_point(&self, position: usize) -> Option<&Point> {
+  pub fn get_point(&self, position: usize) -> Option<&SimplePoint> {
     self.points.get(position)
   }
 }
@@ -241,7 +219,7 @@ pub struct AnimationPointIterator<'a> {
 
 impl <'a> AnimationPointIterator<'a> {
   // Get the next point for the current frame and advance pointer.
-  fn next_point_for_frame(&mut self) -> Option<&'a Point> {
+  fn next_point_for_frame(&mut self) -> Option<&'a SimplePoint> {
     match self.current_frame {
       None => return None, // Iteration has ended
       Some(frame) => {
@@ -273,7 +251,7 @@ pub struct FramePointIterator<'a> {
 
 impl<'a> IntoIterator for &'a Frame {
   type IntoIter = FramePointIterator<'a>;
-  type Item = &'a Point;
+  type Item = &'a SimplePoint;
 
   fn into_iter(self) -> Self::IntoIter {
     FramePointIterator { frame: self, index: 0 }
@@ -291,7 +269,7 @@ impl<'a> Iterator for AnimationFrameIterator<'a> {
 }
 
 impl<'a> Iterator for AnimationPointIterator<'a> {
-  type Item = &'a Point;
+  type Item = &'a SimplePoint;
 
   fn next(&mut self) -> Option<Self::Item> {
     self.next_point_for_frame().or_else(|| {
@@ -302,7 +280,7 @@ impl<'a> Iterator for AnimationPointIterator<'a> {
 }
 
 impl<'a> Iterator for FramePointIterator<'a> {
-  type Item = &'a Point;
+  type Item = &'a SimplePoint;
 
   fn next(&mut self) -> Option<Self::Item> {
     let item = self.frame.get_point(self.index);
@@ -324,7 +302,7 @@ mod tests {
     fn frame(num_points: usize) -> Frame {
       let mut points = Vec::new();
       for _i in 0..num_points {
-        points.push(Point::default());
+        points.push(SimplePoint::default());
       }
       Frame {
         points: points,
@@ -449,8 +427,8 @@ mod tests {
   }
 
   // Create sentinel value points.
-  fn point(color: u8) -> Point {
-    Point {
+  fn point(color: u8) -> SimplePoint {
+    SimplePoint {
       x: 0,
       y: 0,
       r: color,
@@ -461,7 +439,7 @@ mod tests {
   }
 
   // CTOR.
-  fn frame(points: Vec<Point>) -> Frame {
+  fn frame(points: Vec<SimplePoint>) -> Frame {
     Frame {
       points: points,
       frame_name: None,

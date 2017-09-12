@@ -10,9 +10,15 @@
 //! API may be used in the future to serialize frames back into binary ILDA
 //! files (TODO).
 
-#![warn(missing_docs)]
-#![warn(unused_extern_crates)]
-#![warn(unused_qualifications)]
+#![deny(dead_code)]
+#![deny(missing_docs)]
+#![deny(unreachable_patterns)]
+#![deny(unused_extern_crates)]
+#![deny(unused_imports)]
+#![deny(unused_qualifications)]
+#![deny(unused_qualifications)]
+
+extern crate point;
 
 pub mod animation;
 pub mod data;
@@ -23,3 +29,4 @@ mod color;
 mod error;
 
 pub use error::IldaError;
+pub use point::SimplePoint;
