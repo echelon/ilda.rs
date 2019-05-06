@@ -3,6 +3,7 @@
 //! Low level parsing that returns headers and data fields closer to the
 //! underlying ILDA data model.
 
+use data::ILDA_HEADER;
 use data::COLOR_PALETTE_SIZE;
 use data::ColorPalette;
 use data::Format;
@@ -20,103 +21,135 @@ use data::TrueColorPoint3d;
 use error::IldaError;
 use std::fs::File;
 use std::io::Read;
-
-/// The ILDA format header; "ILDA" in ASCII.
-const ILDA_HEADER : [u8; 4] = [73u8, 76u8, 68u8, 65u8];
+use std::io::Cursor;
+use std::io::Error;
+use std::io::ErrorKind;
 
 /// Read ILDA data from a file.
 pub fn read_file(filename: &str) -> Result<Vec<IldaEntry>, IldaError> {
-  let mut contents = Vec::new();
   let mut file = File::open(filename)?;
-  let _r = file.read_to_end(&mut contents);
-  read_bytes(&contents[..])
+  stream_with_error(&mut file).collect()
 }
 
 /// Read ILDA data from raw bytes.
 pub fn read_bytes(ilda_bytes: &[u8]) -> Result<Vec<IldaEntry>, IldaError> {
-  if ilda_bytes.len() < 32 {
-    return Err(IldaError::FileTooSmall);
+  let mut cursor = Cursor::new(ilda_bytes);
+  stream_with_error(&mut cursor).collect()
+}
+
+/// Stream ILDA entries from a reader.
+/// The iterator will panic if it encounters an error.
+pub fn stream<'a>(reader: &'a mut Read) -> IldaEntryIterator<'a> {
+  IldaEntryIterator(IldaEntryIteratorData::new(reader))
+}
+
+/// Stream ILDA entries (with error handling) from a reader.
+pub fn stream_with_error<'a>(reader: &'a mut Read) -> IldaEntryIteratorWithError<'a> {
+  IldaEntryIteratorWithError(IldaEntryIteratorData::new(reader))
+}
+
+/// Data for the Iterators.
+struct IldaEntryIteratorData<'a> {
+  source: &'a mut Read,
+  current_format: Option<Format>,
+  frames_to_read: u16
+}
+
+/// Iterator over IldaEntry items. Panics on error.
+pub struct IldaEntryIterator<'a>(IldaEntryIteratorData<'a>);
+
+/// Iterator over Result<IldaEntry, IldaError> items.
+pub struct IldaEntryIteratorWithError<'a>(IldaEntryIteratorData<'a>);
+
+impl<'a> Iterator for IldaEntryIterator<'a> {
+  type Item = IldaEntry;
+
+  fn next(&mut self) -> Option<Self::Item> {
+    self.0._next().unwrap()
+  }
+}
+
+impl<'a> Iterator for IldaEntryIteratorWithError<'a> {
+  type Item = Result<IldaEntry, IldaError>;
+
+  fn next(&mut self) -> Option<Self::Item> {
+    return self.0._next().transpose()
+  }
+}
+
+impl<'a> IldaEntryIteratorData<'a> {
+  fn new(source: &'a mut Read) -> IldaEntryIteratorData<'a> {
+    IldaEntryIteratorData {
+      source,
+      current_format: None,
+      frames_to_read: 0
+    }
   }
 
-  enum NextRead { Header, I3d, I2d, Color, Tc3d, Tc2d };
+  fn _next(&mut self) -> Result<Option<IldaEntry>, IldaError> {
+    if self.frames_to_read == 0 {
+      // currentry no frames are expected to follow the stream, read new header
+      let mut buffer = [0; HEADER_SIZE];
 
-  let mut vec = Vec::new();
-  let mut i : usize = 0;
-  let mut next_read = NextRead::Header;
-  let mut frames_to_read = 0;
+      // The following logic behaves like read_exact but return Ok(None) if it immediately encounters EOF
+      let mut bytes_read = 0;
+      while bytes_read < HEADER_SIZE {
+        match self.source.read(&mut buffer[bytes_read..HEADER_SIZE]) {
+          Ok(0) => return if bytes_read == 0 {
+            Ok(None)
+          }
+          else {
+            Err(IldaError::IoError { cause: Error::new(ErrorKind::UnexpectedEof, "unexpected end of header") })
+          },
+          Ok(size) => bytes_read += size,
+          Err(cause) => return Err(IldaError::IoError { cause })
+        }
+      }
 
-  // TODO(echelon): This isn't very concise.
-  while i < ilda_bytes.len() {
-    match next_read {
-      NextRead::Header => {
-        let header = read_header(&ilda_bytes[i .. i + HEADER_SIZE])
-            .map_err(|_| IldaError::InvalidHeader)?;
-        next_read = match header.get_format() {
-          Format::Indexed3d => NextRead::I3d,
-          Format::Indexed2d => NextRead::I2d,
-          Format::ColorPalette => NextRead::Color,
-          Format::TrueColor3d => NextRead::Tc3d,
-          Format::TrueColor2d => NextRead::Tc2d,
-          Format::Unknown => return Err(IldaError::InvalidHeader),
-        };
-        frames_to_read = header.record_count;
-        vec.push(IldaEntry::HeaderEntry(header));
-        i += HEADER_SIZE;
+      let header = read_header( & buffer)?;
+
+      self.frames_to_read = header.record_count;
+      self.current_format = Some(header.get_format()?);
+      return Ok(Some(IldaEntry::HeaderEntry(header)))
+    }
+
+    let entry = match self.current_format.as_ref().unwrap() {
+      Format::Indexed3d => {
+        let mut buffer = [0; INDEXED_3D_DATA_SIZE];
+        self.source.read_exact( & mut buffer)?;
+        let point = IndexedPoint3d::read_bytes( &buffer) ?.remove(0);
+        IldaEntry::IdxPoint3dEntry(point)
       },
-      NextRead::I3d => {
-        let end = INDEXED_3D_DATA_SIZE * frames_to_read as usize;
-        let points = IndexedPoint3d::read_bytes(&ilda_bytes[i .. i + end])?;
-        let mut entries = points.iter()
-          .map(|x| IldaEntry::IdxPoint3dEntry(x.clone()))
-          .collect();
-        vec.append(&mut entries);
-        next_read = NextRead::Header;
-        i += end;
+      Format::ColorPalette => {
+        let mut buffer = [0; COLOR_PALETTE_SIZE];
+        self.source.read_exact( & mut buffer)?;
+        let point = ColorPalette::read_bytes( &buffer) ?.remove(0);
+        IldaEntry::ColorPaletteEntry(point)
       },
-      NextRead::I2d => {
-        let end = INDEXED_2D_DATA_SIZE * frames_to_read as usize;
-        let points = IndexedPoint2d::read_bytes(&ilda_bytes[i .. i + end])?;
-        let mut entries = points.iter()
-          .map(|x| IldaEntry::IdxPoint2dEntry(x.clone()))
-          .collect();
-        vec.append(&mut entries);
-        next_read = NextRead::Header;
-        i += end;
+      Format::Indexed2d => {
+        let mut buffer = [0; INDEXED_2D_DATA_SIZE];
+        self.source.read_exact( & mut buffer)?;
+        let point = IndexedPoint2d::read_bytes( &buffer) ?.remove(0);
+        IldaEntry::IdxPoint2dEntry(point)
       },
-      NextRead::Color => {
-        let end = COLOR_PALETTE_SIZE * frames_to_read as usize;
-        let points = ColorPalette::read_bytes(&ilda_bytes[i .. i + end])?;
-        let mut entries = points.iter()
-          .map(|x| IldaEntry::ColorPaletteEntry(x.clone()))
-          .collect();
-        vec.append(&mut entries);
-        next_read = NextRead::Header;
-        i += end;
+      Format::TrueColor3d => {
+        let mut buffer = [0; TRUE_COLOR_3D_DATA_SIZE];
+        self.source.read_exact( & mut buffer)?;
+        let point = TrueColorPoint3d::read_bytes( &buffer) ?.remove(0);
+        IldaEntry::TcPoint3dEntry(point)
       },
-      NextRead::Tc3d => {
-        let end = TRUE_COLOR_3D_DATA_SIZE * frames_to_read as usize;
-        let points = TrueColorPoint3d::read_bytes(&ilda_bytes[i .. i + end])?;
-        let mut entries = points.iter()
-          .map(|x| IldaEntry::TcPoint3dEntry(x.clone()))
-          .collect();
-        vec.append(&mut entries);
-        next_read = NextRead::Header;
-        i += end;
-      },
-      NextRead::Tc2d => {
-        let end = TRUE_COLOR_2D_DATA_SIZE * frames_to_read as usize;
-        let points = TrueColorPoint2d::read_bytes(&ilda_bytes[i .. i + end])?;
-        let mut entries = points.iter()
-          .map(|x| IldaEntry::TcPoint2dEntry(x.clone()))
-          .collect();
-        vec.append(&mut entries);
-        next_read = NextRead::Header;
-        i += end;
+      Format::TrueColor2d => {
+        let mut buffer = [0; TRUE_COLOR_2D_DATA_SIZE];
+        self.source.read_exact( & mut buffer)?;
+        let point = TrueColorPoint2d::read_bytes( &buffer) ?.remove(0);
+        IldaEntry::TcPoint2dEntry(point)
       },
     };
-  }
 
-  Ok(vec)
+    self.frames_to_read -= 1;
+
+    Ok(Some(entry))
+  }
 }
 
 fn read_header(header_bytes: &[u8]) -> Result<Header, IldaError> {

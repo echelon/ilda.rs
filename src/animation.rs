@@ -6,11 +6,19 @@
 //! and so forth.
 
 use color::default_color_index;
+use data::Format;
+use data::Header;
 use data::IldaEntry;
+use data::TrueColorPoint2d;
 use error::IldaError;
-use parser::read_bytes;
-use parser::read_file;
+use parser::stream_with_error;
+use parser::IldaEntryIteratorWithError;
 use point::SimplePoint;
+use std::fs::File;
+use std::io::Cursor;
+use std::io::{Read, Write};
+use std::vec::IntoIter;
+use writer::IldaWriter;
 
 /// An animation is comprised of one or more frames.
 #[derive(Clone)]
@@ -26,7 +34,83 @@ pub struct Frame {
   company_name: Option<String>,
 }
 
+/// Output ILDA frames into a Writer that implements Write
+pub struct AnimationStreamWriter<T> where T: Write {
+    inner: IldaWriter<T>,
+    finalized: bool,
+}
+
+impl<W: Write> AnimationStreamWriter<W> {
+  /// Create a new AnimationStreamWriter instance
+  pub fn new(inner: W) -> AnimationStreamWriter<W> {
+    AnimationStreamWriter {
+      inner: IldaWriter::new(inner),
+      finalized: false
+    }
+  }
+
+  /// Write a frame into the stream. (Simple version for pseudo streaming)
+  /// This will set the frame number and total_frames value of the header to 0.
+  /// To specify these values, use `write_frame_ext` instead.
+  pub fn write_frame(&mut self, frame: &Frame) -> Result<(), IldaError> {
+    self.write_frame_ext(frame, 0, 0)
+  }
+
+  /// Write a frame into the stream.
+  pub fn write_frame_ext(&mut self, frame: &Frame, number: u16, total_frames: u16) -> Result<(), IldaError> {
+    let len = frame.points.len();
+
+    if len > u16::max_value() as usize {
+      return Err(IldaError::TooManyPoints(len));
+    }
+
+    let header = Header::new(Format::TrueColor2d, frame.frame_name.clone(), frame.company_name.clone(), len as u16, number, total_frames, 0);
+
+    self.inner.write(IldaEntry::HeaderEntry(header))?;
+
+    for (i, point) in frame.points.iter().enumerate() {
+      let ilda_point = TrueColorPoint2d::new(point.x, point.y, point.r, point.g, point.b, i + 1 == len, point.is_blank);
+      self.inner.write(IldaEntry::TcPoint2dEntry(ilda_point))?
+    }
+
+    Ok(())
+  }
+
+  fn write_finishing_header(&mut self) -> Result<(), IldaError> {
+    let header = Header::new(Format::TrueColor2d, None, None, 0, 0, 0, 0);
+
+    self.inner.write(IldaEntry::HeaderEntry(header))
+  }
+
+  /// Consume the writer and finish the ILDA file by writing the final header.
+  /// If this method is not called, Drop will take care of writing the final header.
+  /// Therefore calling this function is optional but recommended to catch possible errors.
+  pub fn finalize(mut self) -> Result<(), IldaError> {
+    self.finalized = true;
+    self.write_finishing_header()
+  }
+}
+
+impl<W: Write> Drop for AnimationStreamWriter<W> {
+  fn drop(&mut self) {
+    if !self.finalized {
+      self.write_finishing_header().unwrap();
+    }
+  }
+}
+
+/// Iterator over animation Frame items. Panics on error.
+pub struct AnimationFrameIterator<'a>(IldaEntryIteratorWithError<'a>);
+
+/// Iterator over animation Result<Frame, IldaError> items.
+pub struct AnimationFrameIteratorWithError<'a>(IldaEntryIteratorWithError<'a>);
+
 impl Animation {
+  /// Creates a new animation from frames.
+  pub fn new(frames: Vec<Frame>) -> Animation {
+    Animation { frames }
+  }
+
   /// Read an animation from an ILDA file.
   ///
   /// ```
@@ -34,22 +118,59 @@ impl Animation {
   /// let filename = "examples/files/ildatest.ild";
   /// let animation = Animation::read_file(filename).unwrap();
   ///
-  /// assert_eq!(2, animation.frame_count());
+  /// assert_eq!(1, animation.frame_count());
   /// ```
   pub fn read_file(filename: &str) -> Result<Animation, IldaError> {
-    let entries = read_file(filename)?;
-    Animation::process_entries(entries)
+    let mut file = File::open(filename)?;
+    let iter = Self::stream_with_error(&mut file);
+    let result: Result<Vec<Frame>, IldaError> = iter.collect();
+    Ok(Animation { frames: result? })
   }
 
   /// Read an animation from raw ILDA bytes.
   pub fn read_bytes(ilda_bytes: &[u8]) -> Result<Animation, IldaError> {
-    let entries = read_bytes(ilda_bytes)?;
-    Animation::process_entries(entries)
+    let mut cursor = Cursor::new(ilda_bytes);
+    let iter = Self::stream_with_error(&mut cursor);
+    let result: Result<Vec<Frame>, IldaError> = iter.collect();
+    Ok(Animation { frames: result? })
+  }
+
+  /// Stream Animation Frames from a reader
+  pub fn stream(ilda_reader: &mut Read) -> AnimationFrameIterator {
+    let parser_iter = stream_with_error(ilda_reader);
+    AnimationFrameIterator(parser_iter)
+  }
+
+  /// Stream Animation Frames (with error handling) from a reader
+  pub fn stream_with_error(ilda_reader: &mut Read) -> AnimationFrameIteratorWithError {
+    let parser_iter = stream_with_error(ilda_reader);
+    AnimationFrameIteratorWithError(parser_iter)
+  }
+
+  /// Write Animation to a file
+  pub fn write_file(&self, filename: &str) -> Result<(), IldaError> {
+    let mut file = File::create(filename)?;
+    self.write(&mut file)
+  }
+
+  /// Write Animation to Writer
+  pub fn write<T>(&self, writer: T) -> Result<(), IldaError> where T: Write {
+    let mut streamer = AnimationStreamWriter::new(writer);
+    let len = self.frames.len();
+    if len > u16::max_value() as usize {
+      return Err(IldaError::TooManyFrames(len));
+    }
+
+    for (i, frame) in self.frames.iter().enumerate() {
+      streamer.write_frame_ext(frame, i as u16, len as u16)?;
+    }
+
+    streamer.finalize()
   }
 
   /// Get an frame iterator for the animation.
-  pub fn into_frame_iter<'a>(&'a self) -> AnimationFrameIterator<'a> {
-    AnimationFrameIterator { animation: self, index: 0 }
+  pub fn into_frame_iter(self) -> IntoIter<Frame> {
+    self.frames.into_iter()
   }
 
   /// Get a point iterator for the animation, which will iterate over all points
@@ -77,57 +198,64 @@ impl Animation {
   pub fn get_frame(&self, position: usize) -> Option<&Frame> {
     self.frames.get(position)
   }
+}
 
-  fn process_entries(entries: Vec<IldaEntry>) -> Result<Animation, IldaError> {
-    let mut frames = Vec::new();
-    let mut current_frame = None;
+fn next_frame(iter: &mut IldaEntryIteratorWithError) -> Result<Option<Frame>, IldaError> {
+  let entry = match iter.next().transpose()? {
+    Some(entry) => entry,
+    None => return Ok(None), // no more data
+  };
 
-    // NB: This does not check for format consistency.
-    // Frame-type / point-type mismatch is allowed.
-    for entry in entries {
-      match entry {
-        IldaEntry::HeaderEntry(mut header) => {
-          if current_frame.is_some() {
-            let frame = current_frame.take().unwrap();
-            frames.push(frame);
-          }
+  let mut points_to_read;
 
-          current_frame = Some(Frame {
-            points: Vec::new(),
-            frame_name: header.name.take(),
-            company_name: header.company_name.take(),
-          });
-
-          continue;
-        },
-        _ => {},
+  let mut frame = match entry {
+    IldaEntry::HeaderEntry(mut header) => {
+      points_to_read = header.record_count;
+      Frame {
+        points: Vec::new(),
+        frame_name: header.name.take(),
+        company_name: header.company_name.take(),
       }
-
-      let mut frame = match current_frame {
-        // TODO: Better error type / message
-        None => return Err(IldaError::InvalidData),
-        Some(ref mut frame) => frame,
-      };
-
-      let point = ilda_entry_to_point(entry)?;
-      frame.points.push(point);
     }
+    _ => return Err(IldaError::InvalidData), // expected header
+  };
 
-    // Take the last frame.
-    match current_frame.take() {
-      None => {},
-      Some(frame) => frames.push(frame),
-    }
+  if points_to_read == 0 {
+    // EOF header
+    return Ok(None);
+  }
 
-    if frames.is_empty() {
-      return Err(IldaError::NoData);
-    }
+  while points_to_read > 0 {
+    let entry = match iter.next().transpose()? {
+      Some(entry) => entry,
+      None => return Err(IldaError::InvalidData), // premature end of stream
+    };
 
-    Ok(Animation {
-      frames: frames,
-    })
+    points_to_read = points_to_read - 1;
+
+    let point = ilda_entry_to_point(entry)?;
+    frame.points.push(point);
+  }
+
+  Ok(Some(frame))
+}
+
+impl<'a> Iterator for AnimationFrameIterator<'a> {
+  type Item = Frame;
+
+  fn next(&mut self) -> Option<Self::Item> {
+    next_frame(&mut self.0).unwrap()
   }
 }
+
+impl<'a> Iterator for AnimationFrameIteratorWithError<'a> {
+  type Item = Result<Frame, IldaError>;
+
+  fn next(&mut self) -> Option<Self::Item> {
+    next_frame(&mut self.0).transpose()
+  }
+}
+
 
 /// Convert an IldaEntry containing a point into a respective animation point.
 /// Color palettes and headers will return errors.
@@ -187,6 +315,11 @@ pub fn ilda_entry_to_point(entry: IldaEntry) -> Result<SimplePoint, IldaError> {
 }
 
 impl Frame {
+  /// Create a new frame from points.
+  pub fn new(points: Vec<SimplePoint>, frame_name: Option<String>, company_name: Option<String>) -> Frame {
+    Frame { points, frame_name, company_name }
+  }
+
   /// Get a reference to the points in the frame.
   pub fn get_points(&self) -> &Vec<SimplePoint> {
     &self.points
@@ -203,13 +336,8 @@ impl Frame {
   }
 }
 
-/// Iterator over all the frames in the animation.
-pub struct AnimationFrameIterator<'a> {
-  animation: &'a Animation,
-  index: usize,
-}
-
 /// Iterator over all the points from all of the frames in the animation.
+#[derive(Clone, Copy)]
 pub struct AnimationPointIterator<'a> {
   animation: &'a Animation,
   current_frame: Option<&'a Frame>, // Iteration ends when None.
@@ -255,16 +383,6 @@ impl<'a> IntoIterator for &'a Frame {
 
   fn into_iter(self) -> Self::IntoIter {
     FramePointIterator { frame: self, index: 0 }
-  }
-}
-
-impl<'a> Iterator for AnimationFrameIterator<'a> {
-  type Item = &'a Frame;
-
-  fn next(&mut self) -> Option<Self::Item> {
-    let item = self.animation.get_frame(self.index);
-    self.index += 1;
-    item
   }
 }
 

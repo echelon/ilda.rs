@@ -24,6 +24,7 @@ pub mod animation;
 pub mod data;
 pub mod limit;
 pub mod parser;
+pub mod writer;
 
 mod color;
 mod error;

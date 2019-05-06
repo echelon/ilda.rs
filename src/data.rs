@@ -16,11 +16,12 @@ pub const INDEXED_3D_DATA_SIZE: usize = 8;
 pub const TRUE_COLOR_2D_DATA_SIZE: usize = 8;
 /// Size of an ILDA True Color 3D point data section in bytes.
 pub const TRUE_COLOR_3D_DATA_SIZE: usize = 10;
+/// The ILDA format header; "ILDA" in ASCII.
+pub const ILDA_HEADER: [u8; 4] = [73u8, 76u8, 68u8, 65u8];
 
 /// The payload encoding formats currently supported.
 #[allow(missing_docs)]
 pub enum Format {
-  Unknown,
   ColorPalette,
   Indexed2d,
   Indexed3d,
@@ -65,16 +66,49 @@ pub struct Header {
 
 impl Header {
   /// Returns the format of the header.
-  pub fn get_format(&self) -> Format {
-    match self.format_code {
+  pub fn get_format(&self) -> Result<Format, IldaError> {
+    Ok(match self.format_code {
       0u8 => Format::Indexed3d,
       1u8 => Format::Indexed2d,
       2u8 => Format::ColorPalette,
       4u8 => Format::TrueColor3d,
       5u8 => Format::TrueColor2d,
-      _ => Format::Unknown,
+      _ => return Err(IldaError::InvalidHeader)
+    })
+  }
+
+  /// Create new Header
+  pub fn new(
+    format: Format,
+    name: Option<String>,
+    company_name: Option<String>,
+    record_count: u16,
+    number: u16,
+    total_frames: u16,
+    projector_number: u8
+  ) -> Header {
+    Header {
+      reserved: 0,
+      format_code: match format {
+        Format::Indexed3d => 0u8,
+        Format::Indexed2d => 1u8,
+        Format::ColorPalette => 2u8,
+        Format::TrueColor3d => 4u8,
+        Format::TrueColor2d => 5u8
+      },
+      name,
+      company_name,
+      record_count,
+      number,
+      total_frames,
+      projector_number,
+      reserved_2: 0
     }
   }
+}
+
+fn build_status_code(is_blank: bool, is_last: bool) -> u8 {
+  (if is_last { 1 << 7 } else { 0 } | if is_blank { 1 << 6 } else { 0 })
 }
 
 /// 3D Coordinates with Indexed Color (format 0)
@@ -122,6 +156,17 @@ impl IndexedPoint3d {
     // 7th high order bit is the blanking bit.
     self.status_code & 64 == 64
   }
+
+  /// Create a new IndexedPoint3d point.
+  pub fn new(x: i16, y: i16, z: i16, color_index: u8, is_last: bool, is_blank: bool) -> IndexedPoint3d {
+    IndexedPoint3d {
+      x,
+      y,
+      z,
+      status_code: build_status_code(is_blank, is_last),
+      color_index
+    }
+  }
 }
 
 /// 2D Coordinates with Indexed Color (format 1)
@@ -166,6 +211,16 @@ impl IndexedPoint2d {
     // 7th high order bit is the blanking bit.
     self.status_code & 64 == 64
   }
+
+  /// Create a new IndexedPoint2d point.
+  pub fn new(x: i16, y: i16, color_index: u8, is_last: bool, is_blank: bool) -> IndexedPoint2d {
+    IndexedPoint2d {
+      x,
+      y,
+      status_code: build_status_code(is_blank, is_last),
+      color_index
+    }
+  }
 }
 
 /// Color Palette (format 2)
@@ -199,6 +254,15 @@ impl ColorPalette {
     }
 
     Ok(out)
+  }
+
+  /// Create a new ColorPalette point.
+  pub fn new(r: u8, g: u8, b: u8) -> ColorPalette {
+    ColorPalette {
+      r,
+      g,
+      b
+    }
   }
 }
 
@@ -253,6 +317,19 @@ impl TrueColorPoint3d {
     // 7th high order bit is the blanking bit.
     self.status_code & 64 == 64
   }
+
+  /// Create a new TrueColorPoint2d point.
+  pub fn new(x: i16, y: i16, z: i16, r: u8, g: u8, b: u8, is_last: bool, is_blank: bool) -> TrueColorPoint3d {
+    TrueColorPoint3d {
+      x,
+      y,
+      z,
+      status_code: build_status_code(is_blank, is_last),
+      r,
+      g,
+      b
+    }
+  }
 }
 
 /// 3D Coordinates with True Color (format 5)
@@ -302,6 +379,18 @@ impl TrueColorPoint2d {
   pub fn is_blank(&self) -> bool {
     // 7th high order bit is the blanking bit.
     self.status_code & 64 == 64
+  }
+
+  /// Create a new TrueColorPoint2d point.
+  pub fn new(x: i16, y: i16, r: u8, g: u8, b: u8, is_last: bool, is_blank: bool) -> TrueColorPoint2d {
+    TrueColorPoint2d {
+      x,
+      y,
+      status_code: build_status_code(is_blank, is_last),
+      r,
+      g,
+      b
+    }
   }
 }
 
