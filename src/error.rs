@@ -15,6 +15,12 @@ pub enum IldaError {
   /// Problems were encountered while reading the ILDA data.
   InvalidData,
 
+  /// Too many points in a frame
+  TooManyPoints(usize),
+
+  /// Too many frames in an animation
+  TooManyFrames(usize),
+
   /// Problems were encountered while reading the ILDA data, specifically with
   /// an invalid ILDA header section.
   InvalidHeader,
@@ -40,6 +46,8 @@ impl Error for IldaError {
       IldaError::InvalidHeader => "InvalidHeader",
       IldaError::IoError { .. } => "IoError",
       IldaError::NoData => "NoData",
+      IldaError::TooManyPoints(_) => "TooManyPoints",
+      IldaError::TooManyFrames(_) => "TooManyFrames",
       IldaError::Unsupported => "Unsupported",
     }
   }
